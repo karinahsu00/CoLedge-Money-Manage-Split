@@ -1,0 +1,1 @@
+const express = require('express');\nconst app = express();\nconst PORT = process.env.PORT || 3000;\n\n// Middleware\napp.use(express.json());\n\n// Basic Routing\napp.get('/', (req, res) => {\n    res.send('Welcome to the Express server!');\n});\n\napp.listen(PORT, () => {\n    console.log(`Server is running on port ${PORT}`);\n});\n
