@@ -1,0 +1,20 @@
+# EditorConfig is awesome: https://EditorConfig.org
+
+# top-most EditorConfig file
+root = true
+
+# Unix and Windows line endings
+[*]
+end_of_line = lf
+insert_final_newline = true
+
+# Basic formatting
+[*]
+indent_style = space
+indent_size = 4
+tab_width = 4
+trim_trailing_whitespace = true
+
+# Files with these extensions are treated as Markdown
+[*.md]
+indent_size = 2
