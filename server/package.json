@@ -1,0 +1,1 @@
+{\n  \"name\": \"my-app\",\n  \"version\": \"1.0.0\",\n  \"description\": \"A project using Express and Firebase\",\n  \"main\": \"index.js\",\n  \"scripts\": {\n    \"start\": \"node index.js\"\n  },\n  \"dependencies\": {\n    \"express\": \"^4.17.1\",\n    \"firebase-admin\": \"^9.8.0\"\n  }\n}
