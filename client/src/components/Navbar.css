@@ -1,0 +1,140 @@
+.navbar {
+    background-color: white;
+    box-shadow: 0 4px 12px rgba(166, 138, 100, 0.1);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.navbar-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 70px;
+}
+
+.navbar-logo h2 {
+    color: var(--color-brown);
+    margin: 0;
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
+
+.navbar-logo h2:hover {
+    color: var(--color-dark-green);
+}
+
+.nav-menu {
+    display: flex;
+    list-style: none;
+    gap: 10px;
+    margin: 0;
+    padding: 0;
+}
+
+.nav-item {
+    margin: 0;
+}
+
+.nav-link {
+    background: none;
+    border: none;
+    color: var(--color-gray-green);
+    font-family: var(--font-button);
+    font-weight: 600;
+    font-size: 0.95rem;
+    padding: 8px 16px;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.nav-link:hover {
+    color: var(--color-brown);
+    background-color: var(--color-light-yellow-green);
+}
+
+.nav-link.active {
+    color: white;
+    background-color: var(--color-dark-green);
+}
+
+.nav-link.active::after {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: 16px;
+    right: 16px;
+    height: 3px;
+    background-color: var(--color-brown);
+    border-radius: 2px;
+}
+
+.navbar-user {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.user-email {
+    color: var(--color-gray-green);
+    font-size: 0.9rem;
+    font-family: var(--font-body);
+}
+
+.logout-btn {
+    background-color: #e8a87c;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: var(--font-button);
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+}
+
+.logout-btn:hover {
+    background-color: var(--color-brown);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(166, 138, 100, 0.25);
+}
+
+@media (max-width: 768px) {
+    .navbar-container {
+        flex-wrap: wrap;
+        height: auto;
+        padding: 15px 20px;
+    }
+
+    .navbar-logo h2 {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+
+    .nav-menu {
+        width: 100%;
+        justify-content: flex-start;
+        margin-bottom: 10px;
+    }
+
+    .navbar-user {
+        width: 100%;
+        justify-content: flex-end;
+    }
+
+    .nav-link {
+        padding: 6px 12px;
+        font-size: 0.85rem;
+    }
+
+    .user-email {
+        font-size: 0.8rem;
+    }
+}

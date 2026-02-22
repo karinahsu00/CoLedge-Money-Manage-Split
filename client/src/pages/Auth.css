@@ -1,0 +1,124 @@
+.auth-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background: linear-gradient(135deg, var(--color-light-yellow-green) 0%, var(--color-cream) 100%);
+    padding: 20px;
+}
+
+.auth-card {
+    background-color: white;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(166, 138, 100, 0.15);
+    padding: 40px;
+    width: 100%;
+    max-width: 400px;
+}
+
+.auth-title {
+    text-align: center;
+    color: var(--color-brown);
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+}
+
+.auth-subtitle {
+    text-align: center;
+    color: var(--color-gray-green);
+    margin-bottom: 2rem;
+    font-size: 0.95rem;
+}
+
+.auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.form-group label {
+    font-family: var(--font-button);
+    font-weight: 600;
+    color: var(--color-brown);
+    font-size: 0.95rem;
+}
+
+.form-group input {
+    padding: 12px;
+    font-size: 1rem;
+    border: 2px solid var(--color-gray-green);
+    border-radius: 8px;
+    background-color: var(--color-cream);
+    transition: all 0.3s ease;
+}
+
+.form-group input:focus {
+    border-color: var(--color-dark-green);
+    background-color: white;
+    box-shadow: 0 0 0 4px rgba(132, 169, 140, 0.1);
+}
+
+.btn {
+    padding: 12px 24px;
+    font-size: 1rem;
+    border: none;
+    border-radius: 8px;
+    font-family: var(--font-button);
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.btn-primary {
+    background-color: var(--color-dark-green);
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: var(--color-brown);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(132, 169, 140, 0.3);
+}
+
+.error-message {
+    background-color: #ffe0e0;
+    color: #c62828;
+    padding: 12px;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+    border-left: 4px solid #c62828;
+    font-size: 0.9rem;
+}
+
+.auth-footer {
+    text-align: center;
+    color: var(--color-gray-green);
+    font-size: 0.9rem;
+}
+
+.auth-link {
+    color: var(--color-dark-green);
+    font-weight: 600;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.auth-link:hover {
+    color: var(--color-brown);
+}
+
+@media (max-width: 600px) {
+    .auth-card {
+        padding: 30px 20px;
+    }
+
+    .auth-title {
+        font-size: 1.75rem;
+    }
+}

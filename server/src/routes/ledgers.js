@@ -1,43 +1,28 @@
 const express = require('express');
 const router = express.Router();
+const Ledger = require('../models/Ledger');
 
-// Sample in-memory data structure for ledgers
-let ledgers = [];
-
-// CREATE: Add a new ledger
-router.post('/', (req, res) => {
-    const ledger = req.body;
-    ledger.id = ledgers.length + 1;  // Simple ID assignment
-    ledgers.push(ledger);
-    res.status(201).send(ledger);
+// 获取群组的账簿
+router.get('/group/:groupId', async (req, res) => {
+    try {
+        const userId = req.user.uid;
+        const { groupId } = req.params;
+        const ledger = await Ledger.getByGroupId(userId, groupId);
+        res.json(ledger);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
-// READ: Get all ledgers
-router.get('/', (req, res) => {
-    res.send(ledgers);
-});
-
-// READ: Get a ledger by ID
-router.get('/:id', (req, res) => {
-    const ledger = ledgers.find(l => l.id === parseInt(req.params.id));
-    if (!ledger) return res.status(404).send('Ledger not found');
-    res.send(ledger);
-});
-
-// UPDATE: Update a ledger by ID
-router.put('/:id', (req, res) => {
-    const ledger = ledgers.find(l => l.id === parseInt(req.params.id));
-    if (!ledger) return res.status(404).send('Ledger not found');
-    Object.assign(ledger, req.body);
-    res.send(ledger);
-});
-
-// DELETE: Delete a ledger by ID
-router.delete('/:id', (req, res) => {
-    const ledgerIndex = ledgers.findIndex(l => l.id === parseInt(req.params.id));
-    if (ledgerIndex === -1) return res.status(404).send('Ledger not found');
-    ledgers.splice(ledgerIndex, 1);
-    res.status(204).send();
+// 获取用户的所有账簿
+router.get('/', async (req, res) => {
+    try {
+        const userId = req.user.uid;
+        const ledgers = await Ledger.getByUserId(userId);
+        res.json(ledgers);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 module.exports = router;

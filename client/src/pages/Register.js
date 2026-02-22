@@ -3,27 +3,38 @@ import { useNavigate, Link } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import './Auth.css';
 
-const LoginPage = () => {
+const Register = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
     const [error, setError] = useState('');
-    const { login } = useContext(AuthContext);
+    const { register } = useContext(AuthContext);
     const navigate = useNavigate();
 
-    const handleLogin = async (e) => {
+    const handleRegister = async (e) => {
         e.preventDefault();
         setError('');
 
-        if (!email || !password) {
+        if (!email || !password || !confirmPassword) {
             setError('Please fill in all fields');
             return;
         }
 
+        if (password !== confirmPassword) {
+            setError('Passwords do not match');
+            return;
+        }
+
+        if (password.length < 6) {
+            setError('Password must be at least 6 characters');
+            return;
+        }
+
         try {
-            await login(email, password);
+            await register(email, password);
             navigate('/dashboard');
         } catch (err) {
-            setError('Login failed. Please check your credentials.');
+            setError('Registration failed. Please try again.');
             console.error(err);
         }
     };
@@ -31,12 +42,12 @@ const LoginPage = () => {
     return (
         <div className="auth-container">
             <div className="auth-card">
-                <h1 className="auth-title">Welcome Back</h1>
-                <p className="auth-subtitle">Sign in to your account</p>
+                <h1 className="auth-title">Create Account</h1>
+                <p className="auth-subtitle">Join us today</p>
 
                 {error && <div className="error-message">{error}</div>}
 
-                <form onSubmit={handleLogin} className="auth-form">
+                <form onSubmit={handleRegister} className="auth-form">
                     <div className="form-group">
                         <label htmlFor="email">Email</label>
                         <input
@@ -61,15 +72,27 @@ const LoginPage = () => {
                         />
                     </div>
 
+                    <div className="form-group">
+                        <label htmlFor="confirmPassword">Confirm Password</label>
+                        <input
+                            id="confirmPassword"
+                            type="password"
+                            value={confirmPassword}
+                            onChange={(e) => setConfirmPassword(e.target.value)}
+                            placeholder="••••••••"
+                            required
+                        />
+                    </div>
+
                     <button type="submit" className="btn btn-primary">
-                        Sign In
+                        Create Account
                     </button>
                 </form>
 
                 <p className="auth-footer">
-                    Don't have an account?{' '}
-                    <Link to="/register" className="auth-link">
-                        Sign up here
+                    Already have an account?{' '}
+                    <Link to="/login" className="auth-link">
+                        Sign in here
                     </Link>
                 </p>
             </div>
@@ -77,4 +100,4 @@ const LoginPage = () => {
     );
 };
 
-export default LoginPage;
+export default Register;
