@@ -143,3 +143,4 @@ vite.config.ts.timestamp-*
 .env.*.local
 .DS_Store
 .DS_Store
+client/build/
