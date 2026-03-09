@@ -1,24 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { transactionsAPI, accountsAPI } from '../services/api';
 import '../pages/Dashboard.css';
 
 const DashboardPage = () => {
     const { user, logout } = useAuth();
     const navigate = useNavigate();
     const [transactionType, setTransactionType] = useState('expense');
-    const [accounts] = useState([
-        { id: 1, name: 'Cash', balance: 500, color: '#FFD700' },
-        { id: 2, name: 'Credit Card', balance: 5000, color: '#4169E1' },
-        { id: 3, name: 'Bank Account', balance: 10000, color: '#32CD32' }
-    ]);
+    const [accounts, setAccounts] = useState([]);
+    const [transactions, setTransactions] = useState([]);
+    const [loading, setLoading] = useState(true);
 
-    const [transactions, setTransactions] = useState([
-        { id: 1, date: '2026-01-15', amount: 150, category: 'Dining', account: 'Credit Card', accountTo: '', member: 'You', type: 'expense', note: 'Dinner out' },
-        { id: 2, date: '2026-01-10', amount: 200, category: 'Utilities', account: 'Bank Account', accountTo: '', member: 'You', type: 'expense', note: 'Electricity bill' },
-        { id: 3, date: '2026-01-20', amount: 5000, category: 'Salary', account: 'Bank Account', accountTo: '', member: 'You', type: 'income', note: 'Monthly salary' },
-    ]);
-    
     const [customCategories, setCustomCategories] = useState({
         expense: ['Food', 'Transportation', 'Shopping', 'Utilities', 'Entertainment', 'Other'],
         income: ['Salary', 'Bonus', 'Interest', 'Other'],
@@ -33,12 +26,44 @@ const DashboardPage = () => {
         date: new Date().toISOString().split('T')[0],
         amount: '',
         category: '',
-        account: 'Cash',
-        accountTo: 'Credit Card',
+        account: '',
+        accountTo: '',
         member: 'You',
         type: 'expense',
         note: ''
     });
+
+    // Edit state
+    const [editingId, setEditingId] = useState(null);
+    const [editFormData, setEditFormData] = useState({});
+
+    // Load accounts and transactions from backend on mount
+    useEffect(() => {
+        const fetchData = async () => {
+            setLoading(true);
+            try {
+                const [accRes, txRes] = await Promise.all([
+                    accountsAPI.getAll(),
+                    transactionsAPI.getAll()
+                ]);
+                const loadedAccounts = accRes.data || [];
+                setAccounts(loadedAccounts);
+                setTransactions(txRes.data || []);
+                if (loadedAccounts.length > 0) {
+                    setFormData(prev => ({
+                        ...prev,
+                        account: loadedAccounts[0].name,
+                        accountTo: loadedAccounts.length > 1 ? loadedAccounts[1].name : ''
+                    }));
+                }
+            } catch (err) {
+                console.error('Failed to load data:', err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchData();
+    }, []);
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -63,34 +88,82 @@ const DashboardPage = () => {
         }
     };
 
-    const handleAddTransaction = (e) => {
+    const handleAddTransaction = async (e) => {
         e.preventDefault();
         if (!formData.amount || !formData.category) {
             alert('Please fill in all fields');
             return;
         }
 
-        const newTransaction = {
-            id: transactions.length + 1,
+        const payload = {
             ...formData,
             amount: parseFloat(formData.amount)
         };
 
-        setTransactions([newTransaction, ...transactions]);
-        setFormData({
-            date: new Date().toISOString().split('T')[0],
-            amount: '',
-            category: '',
-            account: 'Cash',
-            accountTo: 'Credit Card',
-            member: 'You',
-            type: transactionType,
-            note: ''
+        try {
+            const res = await transactionsAPI.create(payload);
+            setTransactions(prev => [res.data, ...prev]);
+            setFormData(prev => ({
+                date: new Date().toISOString().split('T')[0],
+                amount: '',
+                category: '',
+                account: accounts.length > 0 ? accounts[0].name : '',
+                accountTo: accounts.length > 1 ? accounts[1].name : '',
+                member: 'You',
+                type: transactionType,
+                note: ''
+            }));
+        } catch (err) {
+            alert('Failed to add transaction: ' + (err.response?.data?.error || err.message));
+        }
+    };
+
+    const handleDeleteTransaction = async (id) => {
+        if (!window.confirm('Delete this transaction?')) return;
+        try {
+            await transactionsAPI.delete(id);
+            setTransactions(prev => prev.filter(t => t.id !== id));
+        } catch (err) {
+            alert('Failed to delete transaction: ' + (err.response?.data?.error || err.message));
+        }
+    };
+
+    const handleEditStart = (transaction) => {
+        setEditingId(transaction.id);
+        setEditFormData({
+            date: transaction.date,
+            amount: transaction.amount,
+            category: transaction.category,
+            account: transaction.account,
+            accountTo: transaction.accountTo || '',
+            member: transaction.member || 'You',
+            type: transaction.type,
+            note: transaction.note || ''
         });
     };
 
-    const handleDeleteTransaction = (id) => {
-        setTransactions(transactions.filter(t => t.id !== id));
+    const handleEditCancel = () => {
+        setEditingId(null);
+        setEditFormData({});
+    };
+
+    const handleEditSave = async (id) => {
+        if (!editFormData.amount || !editFormData.category) {
+            alert('Please fill in all fields');
+            return;
+        }
+        const payload = {
+            ...editFormData,
+            amount: parseFloat(editFormData.amount)
+        };
+        try {
+            const res = await transactionsAPI.update(id, payload);
+            setTransactions(prev => prev.map(t => t.id === id ? res.data : t));
+            setEditingId(null);
+            setEditFormData({});
+        } catch (err) {
+            alert('Failed to update transaction: ' + (err.response?.data?.error || err.message));
+        }
     };
 
     const handleLogout = () => {
@@ -104,6 +177,8 @@ const DashboardPage = () => {
         const dateB = new Date(b.date);
         return sortOrder === 'asc' ? dateA - dateB : dateB - dateA;
     });
+
+    const colSpan = transactionType === 'transfer' ? 8 : 7;
 
     return (
         <div className="dashboard-container">
@@ -212,39 +287,97 @@ const DashboardPage = () => {
                             </select>
                         </div>
                     </div>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Date</th>
-                                <th>Amount</th>
-                                <th>Category</th>
-                                {transactionType === 'transfer' ? (<><th>From Account</th><th>To Account</th></>) : (<th>Account</th>)}
-                                <th>Member</th>
-                                <th>Note</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {filteredTransactions.length > 0 ? (
-                                filteredTransactions.map((transaction) => (
-                                    <tr key={transaction.id}>
-                                        <td>{transaction.date}</td>
-                                        <td className="amount">${transaction.amount.toFixed(2)}</td>
-                                        <td>{transaction.category}</td>
-                                        {transactionType === 'transfer' ? (<><td>{transaction.account}</td><td>{transaction.accountTo}</td></>) : (<td>{transaction.account}</td>)}
-                                        <td>{transaction.member}</td>
-                                        <td>{transaction.note}</td>
-                                        <td>
-                                            <button className="edit-btn">Edit</button>
-                                            <button className="delete-btn" onClick={() => handleDeleteTransaction(transaction.id)}>Delete</button>
-                                        </td>
-                                    </tr>
-                                ))
-                            ) : (
-                                <tr><td colSpan={transactionType === 'transfer' ? '8' : '7'} style={{textAlign: 'center', padding: '20px'}}>No transaction records</td></tr>
-                            )}
-                        </tbody>
-                    </table>
+
+                    {loading ? (
+                        <p style={{textAlign: 'center', padding: '20px', color: '#999'}}>Loading transactions…</p>
+                    ) : (
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Amount</th>
+                                    <th>Category</th>
+                                    {transactionType === 'transfer' ? (<><th>From Account</th><th>To Account</th></>) : (<th>Account</th>)}
+                                    <th>Member</th>
+                                    <th>Note</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {filteredTransactions.length > 0 ? (
+                                    filteredTransactions.map((transaction) => (
+                                        editingId === transaction.id ? (
+                                            /* ── Inline edit row ── */
+                                            <tr key={transaction.id} style={{background: '#f0f4ff'}}>
+                                                <td>
+                                                    <input type="date" value={editFormData.date} onChange={e => setEditFormData(p => ({...p, date: e.target.value}))} className="form-input" style={{width: '130px'}} />
+                                                </td>
+                                                <td>
+                                                    <input type="number" step="0.01" value={editFormData.amount} onChange={e => setEditFormData(p => ({...p, amount: e.target.value}))} className="form-input" style={{width: '100px'}} />
+                                                </td>
+                                                <td>
+                                                    <select value={editFormData.category} onChange={e => setEditFormData(p => ({...p, category: e.target.value}))} className="form-input">
+                                                        <option value="">Select</option>
+                                                        {customCategories[editFormData.type] && customCategories[editFormData.type].map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                                                        {editFormData.category && !customCategories[editFormData.type]?.includes(editFormData.category) && (
+                                                            <option value={editFormData.category}>{editFormData.category}</option>
+                                                        )}
+                                                    </select>
+                                                </td>
+                                                {transactionType === 'transfer' ? (
+                                                    <>
+                                                        <td>
+                                                            <select value={editFormData.account} onChange={e => setEditFormData(p => ({...p, account: e.target.value}))} className="form-input">
+                                                                {accounts.map(acc => <option key={acc.id} value={acc.name}>{acc.name}</option>)}
+                                                            </select>
+                                                        </td>
+                                                        <td>
+                                                            <select value={editFormData.accountTo} onChange={e => setEditFormData(p => ({...p, accountTo: e.target.value}))} className="form-input">
+                                                                <option value="">Select</option>
+                                                                {accounts.filter(acc => acc.name !== editFormData.account).map(acc => <option key={acc.id} value={acc.name}>{acc.name}</option>)}
+                                                            </select>
+                                                        </td>
+                                                    </>
+                                                ) : (
+                                                    <td>
+                                                        <select value={editFormData.account} onChange={e => setEditFormData(p => ({...p, account: e.target.value}))} className="form-input">
+                                                            {accounts.map(acc => <option key={acc.id} value={acc.name}>{acc.name}</option>)}
+                                                        </select>
+                                                    </td>
+                                                )}
+                                                <td>
+                                                    <input type="text" value={editFormData.member} onChange={e => setEditFormData(p => ({...p, member: e.target.value}))} className="form-input" style={{width: '90px'}} />
+                                                </td>
+                                                <td>
+                                                    <input type="text" value={editFormData.note} onChange={e => setEditFormData(p => ({...p, note: e.target.value}))} className="form-input" style={{width: '100px'}} />
+                                                </td>
+                                                <td>
+                                                    <button className="add-btn" style={{padding: '5px 10px', fontSize: '12px', marginRight: '5px'}} onClick={() => handleEditSave(transaction.id)}>Save</button>
+                                                    <button className="cancel-btn" style={{padding: '5px 10px', fontSize: '12px'}} onClick={handleEditCancel}>Cancel</button>
+                                                </td>
+                                            </tr>
+                                        ) : (
+                                            /* ── Normal display row ── */
+                                            <tr key={transaction.id}>
+                                                <td>{transaction.date}</td>
+                                                <td className="amount">${parseFloat(transaction.amount).toFixed(2)}</td>
+                                                <td>{transaction.category}</td>
+                                                {transactionType === 'transfer' ? (<><td>{transaction.account}</td><td>{transaction.accountTo}</td></>) : (<td>{transaction.account}</td>)}
+                                                <td>{transaction.member}</td>
+                                                <td>{transaction.note}</td>
+                                                <td>
+                                                    <button className="edit-btn" onClick={() => handleEditStart(transaction)}>Edit</button>
+                                                    <button className="delete-btn" onClick={() => handleDeleteTransaction(transaction.id)}>Delete</button>
+                                                </td>
+                                            </tr>
+                                        )
+                                    ))
+                                ) : (
+                                    <tr><td colSpan={colSpan} style={{textAlign: 'center', padding: '20px'}}>No transaction records</td></tr>
+                                )}
+                            </tbody>
+                        </table>
+                    )}
                 </div>
             </div>
         </div>

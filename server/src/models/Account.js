@@ -43,12 +43,28 @@ class Account {
     await db.ref(`users/${userId}/accounts/${accountId}`).remove();
   }
 
+  // 按名称查找账户
+  static async getByName(userId, name) {
+    const accounts = await this.getByUserId(userId);
+    return accounts.find(a => a.name === name) || null;
+  }
+
   // 更新账户余额
   static async updateBalance(userId, accountId, amount) {
     const account = await this.getById(userId, accountId);
     const newBalance = (account.balance || 0) + amount;
     await db.ref(`users/${userId}/accounts/${accountId}/balance`).set(newBalance);
     return newBalance;
+  }
+
+  // 按名称更新账户余额
+  static async updateBalanceByName(userId, accountName, amount) {
+    const account = await this.getByName(userId, accountName);
+    if (!account) {
+      console.warn(`Account not found by name "${accountName}" for user ${userId}; balance not updated.`);
+      return;
+    }
+    return this.updateBalance(userId, account.id, amount);
   }
 }
 

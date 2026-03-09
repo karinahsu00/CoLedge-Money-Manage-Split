@@ -20,11 +20,16 @@ router.post('/', async (req, res) => {
         const userId = req.user.uid;
         const transaction = await Transaction.create(userId, req.body);
         
-        // 更新账户余额
-        if (req.body.category === 'expense') {
-            await Account.updateBalance(userId, req.body.account, -req.body.amount);
-        } else if (req.body.category === 'income') {
-            await Account.updateBalance(userId, req.body.account, req.body.amount);
+        // 更新账户余额（根据 type 字段区分类型，按账户名查找）
+        if (req.body.type === 'expense') {
+            await Account.updateBalanceByName(userId, req.body.account, -parseFloat(req.body.amount));
+        } else if (req.body.type === 'income') {
+            await Account.updateBalanceByName(userId, req.body.account, parseFloat(req.body.amount));
+        } else if (req.body.type === 'transfer') {
+            await Account.updateBalanceByName(userId, req.body.account, -parseFloat(req.body.amount));
+            if (req.body.accountTo) {
+                await Account.updateBalanceByName(userId, req.body.accountTo, parseFloat(req.body.amount));
+            }
         }
         
         res.status(201).json(transaction);
@@ -68,11 +73,47 @@ router.get('/:id', async (req, res) => {
     }
 });
 
-// 更新交易
+// 更新交易（同时回滚旧余额、应用新余额）
 router.put('/:id', async (req, res) => {
     try {
         const userId = req.user.uid;
+        const oldTx = await Transaction.getById(userId, req.params.id);
+        
+        if (!oldTx) {
+            return res.status(404).json({ error: 'Transaction not found' });
+        }
+
+        // 回滚旧交易对账户余额的影响
+        if (oldTx.type === 'expense') {
+            await Account.updateBalanceByName(userId, oldTx.account, parseFloat(oldTx.amount));
+        } else if (oldTx.type === 'income') {
+            await Account.updateBalanceByName(userId, oldTx.account, -parseFloat(oldTx.amount));
+        } else if (oldTx.type === 'transfer') {
+            await Account.updateBalanceByName(userId, oldTx.account, parseFloat(oldTx.amount));
+            if (oldTx.accountTo) {
+                await Account.updateBalanceByName(userId, oldTx.accountTo, -parseFloat(oldTx.amount));
+            }
+        }
+
         const transaction = await Transaction.update(userId, req.params.id, req.body);
+
+        // 应用新交易对账户余额的影响
+        const newType = req.body.type || oldTx.type;
+        const newAccount = req.body.account || oldTx.account;
+        const newAmount = parseFloat(req.body.amount != null ? req.body.amount : oldTx.amount);
+        const newAccountTo = req.body.accountTo !== undefined ? req.body.accountTo : oldTx.accountTo;
+
+        if (newType === 'expense') {
+            await Account.updateBalanceByName(userId, newAccount, -newAmount);
+        } else if (newType === 'income') {
+            await Account.updateBalanceByName(userId, newAccount, newAmount);
+        } else if (newType === 'transfer') {
+            await Account.updateBalanceByName(userId, newAccount, -newAmount);
+            if (newAccountTo) {
+                await Account.updateBalanceByName(userId, newAccountTo, newAmount);
+            }
+        }
+
         res.json(transaction);
     } catch (err) {
         res.status(500).json({ error: err.message });
