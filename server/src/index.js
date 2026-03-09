@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+
 const authMiddleware = require('./middleware/auth');
 const authRoutes = require('./routes/auth');
 const accountsRoutes = require('./routes/accounts');
@@ -7,37 +8,49 @@ const transactionsRoutes = require('./routes/transactions');
 const groupsRoutes = require('./routes/groups');
 const splitsRoutes = require('./routes/splits');
 const ledgersRoutes = require('./routes/ledgers');
+const debugRoutes = require('./routes/debug');
 
 const app = express();
 
-// Enable CORS
-app.use(cors());
+app.use((req, res, next) => {
+  console.log('[REQ]', req.method, req.url);
+  next();
+});
 
-// Middleware
+app.use(cors());
 app.use(express.json());
 
-// Public routes (不需要认证)
+// debug
+app.use('/debug', debugRoutes);
+
+// Public routes
 app.use('/api/auth', authRoutes);
 
-// Protected routes (需要认证)
+app.get('/api/me', authMiddleware, (req, res) => {
+  const u = req.user || {};
+  res.json({
+    uid: u.uid || u.user_id || u.sub || null,
+    email: u.email || null,
+  });
+});
+
+// Protected routes
 app.use('/api/accounts', authMiddleware, accountsRoutes);
 app.use('/api/transactions', authMiddleware, transactionsRoutes);
 app.use('/api/groups', authMiddleware, groupsRoutes);
 app.use('/api/splits', authMiddleware, splitsRoutes);
 app.use('/api/ledgers', authMiddleware, ledgersRoutes);
 
-// Basic route
 app.get('/', (req, res) => {
-    res.send('Welcome to CoLedge API!');
+  res.send('Welcome to CoLedge API!');
 });
 
-// Error handling middleware
 app.use((err, req, res, next) => {
-    console.error('Error:', err);
-    res.status(500).json({ error: 'Internal server error' });
+  console.error('Error:', err);
+  res.status(500).json({ error: 'Internal server error' });
 });
 
 const PORT = process.env.PORT || 5002;
 app.listen(PORT, () => {
-    console.log(`🚀 Server is running on port ${PORT}`);
+  console.log(`🚀 Server is running on port ${PORT}`);
 });

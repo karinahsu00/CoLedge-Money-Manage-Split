@@ -1,135 +1,65 @@
-import React, { createContext, useState, useEffect, useContext } from 'react';
-import { initializeApp } from 'firebase/app';
+import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { auth } from '../config/firebase';
 import {
-  getAuth,
-  signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
   signOut,
-  onAuthStateChanged
+  onAuthStateChanged,
 } from 'firebase/auth';
 
-const firebaseConfig = {
-  apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
-  authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.REACT_APP_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.REACT_APP_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.REACT_APP_FIREBASE_APP_ID
-};
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-
-export const AuthContext = createContext();
+const AuthContext = createContext(null);
 
 export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error('useAuth must be used within an AuthProvider');
+  return ctx;
 };
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    // 监听 Firebase 认证状态变化
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (firebaseUser) {
-        const token = await firebaseUser.getIdToken();
-        const userData = {
-          uid: firebaseUser.uid,
-          email: firebaseUser.email
-        };
-        setUser(userData);
-        localStorage.setItem('user', JSON.stringify(userData));
-        localStorage.setItem('authToken', token);
-      } else {
-        setUser(null);
-        localStorage.removeItem('user');
-        localStorage.removeItem('authToken');
-      }
-      setLoading(false);
-    });
-
-    return unsubscribe;
-  }, []);
-
-  const login = async (email, password) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const token = await userCredential.user.getIdToken();
-      const userData = {
-        uid: userCredential.user.uid,
-        email: userCredential.user.email
-      };
-      setUser(userData);
-      localStorage.setItem('user', JSON.stringify(userData));
-      localStorage.setItem('authToken', token);
-      return userData;
-    } catch (err) {
-      setError(err.message);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const register = async (email, password) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const token = await userCredential.user.getIdToken();
-      const userData = {
-        uid: userCredential.user.uid,
-        email: userCredential.user.email
-      };
-      setUser(userData);
-      localStorage.setItem('user', JSON.stringify(userData));
+  setError(null);
+  const cred = await createUserWithEmailAndPassword(auth, email, password);
+  const token = await cred.user.getIdToken();
+  localStorage.setItem('authToken', token);
+  return cred.user;
+};
+
+const login = async (email, password) => {
+  setError(null);
+  const cred = await signInWithEmailAndPassword(auth, email, password);
+  const token = await cred.user.getIdToken();
+  localStorage.setItem('authToken', token);
+  return cred.user;
+};
+
+const logout = async () => {
+  setError(null);
+  localStorage.removeItem('authToken');
+  await signOut(auth);
+};
+
+  useEffect(() => {
+  const unsub = onAuthStateChanged(auth, async (user) => {
+    setCurrentUser(user);
+    if (user) {
+      const token = await user.getIdToken();
       localStorage.setItem('authToken', token);
-      return userData;
-    } catch (err) {
-      setError(err.message);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const logout = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      await signOut(auth);
-      setUser(null);
-      localStorage.removeItem('user');
+    } else {
       localStorage.removeItem('authToken');
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
     }
-  };
+    setLoading(false);
+  });
+  return unsub;
+}, []);
 
-  const value = {
-    user,
-    loading,
-    login,
-    logout,
-    register,
-    error
-  };
-
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
+  const value = useMemo(
+    () => ({ currentUser, loading, error, setError, register, login, logout }),
+    [currentUser, loading, error]
   );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

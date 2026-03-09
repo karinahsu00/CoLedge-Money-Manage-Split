@@ -1,63 +1,58 @@
-import React, { useContext } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { AuthContext } from '../context/AuthContext';
+import React from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import './Navbar.css';
 
 const Navbar = () => {
-    const { user, logout } = useContext(AuthContext);
-    const navigate = useNavigate();
-    const location = useLocation();
+  const navigate = useNavigate();
+  const { currentUser, logout } = useAuth();
 
-    const handleLogout = () => {
-        logout();
-        navigate('/login');
-    };
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/login');
+    } catch (e) {
+      // optional: handle error
+      console.error(e);
+    }
+  };
 
-    const isActive = (path) => location.pathname === path;
+  return (
+    <nav className="navbar">
+      <div className="navbar-left">
+        <Link to="/dashboard" className="navbar-brand">
+          CoLedge
+        </Link>
+      </div>
 
-    return (
-        <nav className="navbar">
-            <div className="navbar-container">
-                <div className="navbar-logo">
-                    <h2>💰 CoLedge</h2>
-                </div>
+      <div className="navbar-right">
+        <Link to="/transactions" className="navbar-link">
+          Transactions
+        </Link>
+        <Link to="/split" className="navbar-link">
+          Split
+        </Link>
 
-                <ul className="nav-menu">
-                    <li className="nav-item">
-                        <button
-                            className={`nav-link ${isActive('/dashboard') ? 'active' : ''}`}
-                            onClick={() => navigate('/dashboard')}
-                        >
-                            Dashboard
-                        </button>
-                    </li>
-                    <li className="nav-item">
-                        <button
-                            className={`nav-link ${isActive('/transactions') ? 'active' : ''}`}
-                            onClick={() => navigate('/transactions')}
-                        >
-                            Transactions
-                        </button>
-                    </li>
-                    <li className="nav-item">
-                        <button
-                            className={`nav-link ${isActive('/split') ? 'active' : ''}`}
-                            onClick={() => navigate('/split')}
-                        >
-                            Split Expense
-                        </button>
-                    </li>
-                </ul>
-
-                <div className="navbar-user">
-                    <span className="user-email">{user?.email}</span>
-                    <button onClick={handleLogout} className="logout-btn">
-                        Logout
-                    </button>
-                </div>
-            </div>
-        </nav>
-    );
+        {currentUser ? (
+          <>
+            <span className="navbar-user">{currentUser.email}</span>
+            <button className="navbar-button" onClick={handleLogout}>
+              Logout
+            </button>
+          </>
+        ) : (
+          <>
+            <Link to="/login" className="navbar-link">
+              Login
+            </Link>
+            <Link to="/register" className="navbar-link">
+              Register
+            </Link>
+          </>
+        )}
+      </div>
+    </nav>
+  );
 };
 
 export default Navbar;
