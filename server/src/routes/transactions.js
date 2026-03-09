@@ -20,10 +20,11 @@ router.post('/', async (req, res) => {
         const userId = req.user.uid;
         const transaction = await Transaction.create(userId, req.body);
         
-        // 更新账户余额
-        if (req.body.category === 'expense') {
+        // Update account balance based on transaction type
+        const txType = req.body.type || req.body.category;
+        if (txType === 'expense') {
             await Account.updateBalance(userId, req.body.account, -req.body.amount);
-        } else if (req.body.category === 'income') {
+        } else if (txType === 'income') {
             await Account.updateBalance(userId, req.body.account, req.body.amount);
         }
         

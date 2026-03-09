@@ -1,64 +1,109 @@
 const admin = require('../config/firebase');
 const db = admin.database();
 
+const TRANSACTION_TYPES = ['expense', 'income', 'transfer'];
+
+// Normalize a transaction: for legacy data where `category` held the transaction
+// type (expense/income/transfer), map it to `type` and clear `category`.
+function normalize(transaction) {
+  if (!transaction) return transaction;
+  const t = { ...transaction };
+  if (!t.type && TRANSACTION_TYPES.includes(t.category)) {
+    t.type = t.category;
+    t.category = undefined;
+  }
+  if (t.members === undefined) t.members = [];
+  return t;
+}
+
+// Derive the transaction type from input data
+function deriveType(data) {
+  return data.type || (TRANSACTION_TYPES.includes(data.category) ? data.category : undefined);
+}
+
+// Derive the expense sub-category from input data
+function deriveCategory(data) {
+  return data.category && !TRANSACTION_TYPES.includes(data.category) ? data.category : undefined;
+}
+
 class Transaction {
-  // 创建交易
+  // Create a transaction
   static async create(userId, transactionData) {
     const ref = db.ref(`users/${userId}/transactions`).push();
     const id = ref.key;
-    await ref.set({
+
+    const type = deriveType(transactionData);
+    const category = deriveCategory(transactionData);
+
+    const record = {
       id,
       date: transactionData.date || new Date().toISOString(),
       amount: transactionData.amount,
-      category: transactionData.category, // 'expense', 'income', 'transfer'
-      account: transactionData.account, // 账户ID
-      members: transactionData.members || [], // 涉及的成员
+      type,
+      category,
+      account: transactionData.account,
+      members: transactionData.members || [],
       description: transactionData.description,
       tags: transactionData.tags || [],
+      note: transactionData.note,
       createdAt: new Date().toISOString(),
-      ...transactionData
-    });
-    return { id, ...transactionData };
+    };
+
+    await ref.set(record);
+    return record;
   }
 
-  // 获取用户所有交易
+  // Get all transactions for a user
   static async getByUserId(userId) {
     const snapshot = await db.ref(`users/${userId}/transactions`).once('value');
     if (!snapshot.exists()) return [];
-    return Object.values(snapshot.val()).sort((a, b) => new Date(b.date) - new Date(a.date));
+    return Object.values(snapshot.val())
+      .map(normalize)
+      .sort((a, b) => new Date(b.date) - new Date(a.date));
   }
 
-  // 按类别获取交易
+  // Get transactions by type (expense/income/transfer)
   static async getByCategory(userId, category) {
     const snapshot = await db.ref(`users/${userId}/transactions`).once('value');
     if (!snapshot.exists()) return [];
-    return Object.values(snapshot.val()).filter(t => t.category === category);
+    return Object.values(snapshot.val())
+      .map(normalize)
+      .filter(t => t.type === category || t.category === category);
   }
 
-  // 按日期范围获取交易
+  // Get transactions within a date range
   static async getByDateRange(userId, startDate, endDate) {
     const snapshot = await db.ref(`users/${userId}/transactions`).once('value');
     if (!snapshot.exists()) return [];
-    return Object.values(snapshot.val()).filter(t => {
-      const tDate = new Date(t.date);
-      return tDate >= new Date(startDate) && tDate <= new Date(endDate);
-    });
+    return Object.values(snapshot.val())
+      .map(normalize)
+      .filter(t => {
+        const tDate = new Date(t.date);
+        return tDate >= new Date(startDate) && tDate <= new Date(endDate);
+      });
   }
 
-  // 获取单个交易
+  // Get a single transaction
   static async getById(userId, transactionId) {
     const snapshot = await db.ref(`users/${userId}/transactions/${transactionId}`).once('value');
     if (!snapshot.exists()) return null;
-    return snapshot.val();
+    return normalize(snapshot.val());
   }
 
-  // 更新交易
+  // Update a transaction
   static async update(userId, transactionId, transactionData) {
-    await db.ref(`users/${userId}/transactions/${transactionId}`).update(transactionData);
+    const type = deriveType(transactionData);
+    const category = deriveCategory(transactionData);
+
+    const updates = { ...transactionData };
+    if (type !== undefined) updates.type = type;
+    if (category !== undefined) updates.category = category;
+
+    await db.ref(`users/${userId}/transactions/${transactionId}`).update(updates);
     return this.getById(userId, transactionId);
   }
 
-  // 删除交易
+  // Delete a transaction
   static async delete(userId, transactionId) {
     await db.ref(`users/${userId}/transactions/${transactionId}`).remove();
   }
