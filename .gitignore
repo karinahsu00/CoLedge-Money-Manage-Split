@@ -1,5 +1,21 @@
+# macOS
+.DS_Store
+
+# env files (secrets)
+.env
+client/.env
+server/.env
+
+# dependencies
+node_modules/
+client/node_modules/
+server/node_modules/
+
 # build outputs
 client/build/
 
 # local backups
 *.bak
+
+# optional: local debug routes
+server/src/routes/debug.js
