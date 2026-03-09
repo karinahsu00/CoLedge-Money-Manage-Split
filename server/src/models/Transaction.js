@@ -17,34 +17,20 @@ class Transaction {
     const createdAt = transactionData.createdAt || new Date().toISOString();
 
     const dataToSave = this.clean({
-      // core fields
+      // keep any additional fields, but clean() will remove undefined
+      ...transactionData,
+
+      // enforce sanitized/computed values, overriding raw transactionData
       id,
       date: transactionData.date,
       amount: Number(transactionData.amount),
       type: transactionData.type, // expense | income | transfer
       category: transactionData.category,
-
-      // ids
       accountId: transactionData.accountId,
       accountToId: transactionData.accountToId || '',
-
       member: transactionData.member || 'You',
-
-      // compatibility fields
       description,
       note: transactionData.note ?? description,
-
-      createdAt,
-
-      // keep any additional fields, but clean() will remove undefined
-      ...transactionData,
-
-      // enforce key fields at end
-      id,
-      amount: Number(transactionData.amount),
-      accountId: transactionData.accountId,
-      accountToId: transactionData.accountToId || '',
-      description,
       createdAt,
     });
 

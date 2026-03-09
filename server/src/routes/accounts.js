@@ -71,7 +71,7 @@ router.delete('/:id', async (req, res) => {
       if (inUse) {
         return res.status(409).json({
           error:
-            'Cannot delete account because it is used by existing transactions. Consider creating a new account or (future) archiving this account.',
+            'Cannot delete account because it is used by existing transactions. Consider archiving this account instead.',
         });
       }
     }

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { auth } from '../config/firebase';
 import {
   createUserWithEmailAndPassword,
@@ -20,27 +20,27 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const register = async (email, password) => {
-  setError(null);
-  const cred = await createUserWithEmailAndPassword(auth, email, password);
-  const token = await cred.user.getIdToken();
-  localStorage.setItem('authToken', token);
-  return cred.user;
-};
+  const register = useCallback(async (email, password) => {
+    setError(null);
+    const cred = await createUserWithEmailAndPassword(auth, email, password);
+    const token = await cred.user.getIdToken();
+    localStorage.setItem('authToken', token);
+    return cred.user;
+  }, []);
 
-const login = async (email, password) => {
-  setError(null);
-  const cred = await signInWithEmailAndPassword(auth, email, password);
-  const token = await cred.user.getIdToken();
-  localStorage.setItem('authToken', token);
-  return cred.user;
-};
+  const login = useCallback(async (email, password) => {
+    setError(null);
+    const cred = await signInWithEmailAndPassword(auth, email, password);
+    const token = await cred.user.getIdToken();
+    localStorage.setItem('authToken', token);
+    return cred.user;
+  }, []);
 
-const logout = async () => {
-  setError(null);
-  localStorage.removeItem('authToken');
-  await signOut(auth);
-};
+  const logout = useCallback(async () => {
+    setError(null);
+    localStorage.removeItem('authToken');
+    await signOut(auth);
+  }, []);
 
   useEffect(() => {
   const unsub = onAuthStateChanged(auth, async (user) => {
@@ -58,7 +58,7 @@ const logout = async () => {
 
   const value = useMemo(
     () => ({ currentUser, loading, error, setError, register, login, logout }),
-    [currentUser, loading, error]
+    [currentUser, loading, error, register, login, logout]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
