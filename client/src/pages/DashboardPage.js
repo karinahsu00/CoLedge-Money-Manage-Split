@@ -511,9 +511,9 @@ const DashboardPage = () => {
                         t.type === 'transfer' && toName ? `${fromName} → ${toName}` : fromName;
 
                       const amount = Number(t.amount) || 0;
-                      const localCurrency2 = t.currency || t.fromCurrency || 'USD';
-                      const usdAmt2 = t.usdAmount != null ? Number(t.usdAmount) : null;
-                      const showUSD2 = usdAmt2 != null && localCurrency2 !== 'USD';
+                      const mobileLocalCurrency = t.currency || t.fromCurrency || 'USD';
+                      const mobileUsdAmt = t.usdAmount != null ? Number(t.usdAmount) : null;
+                      const mobileShowUSD = mobileUsdAmt != null && mobileLocalCurrency !== 'USD';
 
                       return (
                         <div key={t.id} className="tx-card">
@@ -525,8 +525,8 @@ const DashboardPage = () => {
                               </span>
                             </div>
                             <div className="tx-card-amount">
-                              <div>{amount.toFixed(2)} {localCurrency2}</div>
-                              {showUSD2 && <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{usdAmt2.toFixed(2)} USD</div>}
+                              <div>{amount.toFixed(2)} {mobileLocalCurrency}</div>
+                              {mobileShowUSD && <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{mobileUsdAmt.toFixed(2)} USD</div>}
                             </div>
                           </div>
 
