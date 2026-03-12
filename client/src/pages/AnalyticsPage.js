@@ -4,10 +4,20 @@ import { useAuth } from '../context/AuthContext';
 import { transactionsAPI, accountsAPI } from '../config/api';
 import '../pages/Dashboard.css';
 
-// ── Pie chart colours ────────────────────────────────────────────────────────
+// ── Pie chart colours — warm soft academia palette ───────────────────────────
 const COLORS = [
-    '#667eea', '#ff6b6b', '#51cf66', '#fcc419', '#74c0fc',
-    '#f783ac', '#a9e34b', '#ff8787', '#63e6be', '#e599f7',
+    '#606c38', // olive green
+    '#81b29a', // dusty sage
+    '#3c6e71', // dark teal
+    '#669bbc', // ocean blue
+    '#6096ba', // slate blue
+    '#aaa1c8', // soft lavender
+    '#a68a64', // sandy brown
+    '#e07a5f', // terracotta
+    '#d5bdaf', // warm blush
+    '#ccd5ae', // pale olive
+    '#656d4a', // dark olive
+    '#a3b18a', // light sage
 ];
 
 // ── SVG Pie chart ────────────────────────────────────────────────────────────
@@ -350,12 +360,12 @@ const AnalyticsPage = () => {
                     <>
                         {/* ── Summary ── */}
                         <div className="summary-cards">
-                            <div className="summary-card balance-positive">
+                            <div className="summary-card analytics-dark-card">
                                 <h3>Net Income (Income - Expense)</h3>
                                 <p className="amount">${netIncome.toFixed(2)}</p>
                             </div>
 
-                            <div className="summary-card balance-positive">
+                            <div className="summary-card analytics-dark-card">
                                 <h3>Total Transfers</h3>
                                 <p className="amount">${totalTransferAmount.toFixed(2)}</p>
                             </div>
