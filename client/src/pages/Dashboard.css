@@ -631,6 +631,101 @@ tr:hover {
     margin-bottom: 20px;
 }
 
+/* Analytics Page */
+.analytics-range-bar {
+    margin-bottom: 25px;
+}
+
+.analytics-range-tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+}
+
+.analytics-range-inputs {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.analytics-date-sep {
+    font-weight: bold;
+    color: #555;
+}
+
+.analytics-section {
+    display: flex;
+    gap: 30px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+}
+
+.pie-chart-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    min-width: 200px;
+}
+
+.pie-legend {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    font-size: 13px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.pie-legend li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #444;
+}
+
+.pie-dot {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.analytics-table {
+    flex: 1;
+    min-width: 280px;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.analytics-table th,
+.analytics-table td {
+    padding: 10px 12px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+}
+
+.analytics-table thead {
+    background-color: #f8f9fa;
+}
+
+.analytics-table th {
+    font-weight: 600;
+    color: #333;
+    border-bottom: 2px solid #ddd;
+}
+
+.analytics-empty {
+    color: #888;
+    font-style: italic;
+    padding: 20px 0;
+    text-align: center;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .nav-links {
