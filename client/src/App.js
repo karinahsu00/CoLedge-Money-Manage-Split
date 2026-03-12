@@ -7,7 +7,8 @@ import Register from './pages/Register';
 import DashboardPage from './pages/DashboardPage';
 import TransactionsPage from './pages/TransactionsPage';
 import SplitPage from './pages/SplitPage';
-import AnalyticsPage from './pages/AnalyticsPage';
+import AccountsPage from './pages/AccountsPage';
+import AccountDetailPage from './pages/AccountDetailPage';
 
 function App() {
   return (
@@ -16,6 +17,7 @@ function App() {
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<Register />} />
+
           <Route
             path="/dashboard"
             element={
@@ -24,6 +26,7 @@ function App() {
               </ProtectedRoute>
             }
           />
+
           <Route
             path="/transactions"
             element={
@@ -32,6 +35,7 @@ function App() {
               </ProtectedRoute>
             }
           />
+
           <Route
             path="/split"
             element={
@@ -40,14 +44,25 @@ function App() {
               </ProtectedRoute>
             }
           />
+
           <Route
-            path="/analytics"
+            path="/account"
             element={
               <ProtectedRoute>
-                <AnalyticsPage />
+                <AccountsPage />
               </ProtectedRoute>
             }
           />
+
+          <Route
+            path="/account/:id"
+            element={
+              <ProtectedRoute>
+                <AccountDetailPage />
+              </ProtectedRoute>
+            }
+          />
+
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </AuthProvider>

@@ -766,3 +766,148 @@ tr:hover {
         grid-template-columns: 80px 1fr 60px 50px;
     }
 }
+
+/* Transactions header layout */
+.tx-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+/* Desktop table */
+.tx-table-wrap {
+  overflow-x: auto;
+}
+
+.tx-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.tx-table thead th {
+  text-align: left;
+  padding: 10px 8px;
+  border-bottom: 2px solid #eee;
+  white-space: nowrap;
+}
+
+.tx-table tbody td {
+  padding: 10px 8px;
+  border-bottom: 1px solid #f0f0f0;
+  vertical-align: top;
+}
+
+.tx-nowrap {
+  white-space: nowrap;
+}
+
+.tx-amount {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* Mobile cards */
+.tx-cards {
+  display: none;
+}
+
+.tx-card {
+  border: 1px solid #f0f0f0;
+  border-radius: 10px;
+  padding: 12px;
+  margin-top: 10px;
+  background: #fff;
+}
+
+.tx-card-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.tx-card-title {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tx-card-sub {
+  color: #666;
+  font-size: 12px;
+}
+
+.tx-card-amount {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.tx-card-meta {
+  margin-top: 8px;
+  color: #666;
+  font-size: 12px;
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.tx-card-actions {
+  margin-top: 10px;
+}
+
+/* Responsive switch */
+@media (max-width: 767px) {
+  .tx-table-wrap {
+    display: none;
+  }
+  .tx-cards {
+    display: block;
+  }
+}
+
+.account-archived-row {
+  opacity: 0.6;
+}
+
+.archived-pill {
+  margin-left: 10px;
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #eee;
+  color: #666;
+}
+
+.account-overview-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.account-kpi {
+  border: 1px solid #f0f0f0;
+  border-radius: 10px;
+  padding: 12px;
+  background: #fff;
+}
+
+.account-kpi-label {
+  font-size: 12px;
+  color: #666;
+}
+
+.account-kpi-value {
+  margin-top: 6px;
+  font-size: 20px;
+  font-weight: 800;
+}
+
+@media (max-width: 767px) {
+  .account-overview-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
