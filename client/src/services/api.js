@@ -68,6 +68,7 @@ export const groupsAPI = {
 // ======== Splits API ========
 export const splitsAPI = {
   getAll: () => apiClient.get('/splits'),
+  getByGroup: (groupId) => apiClient.get(`/splits/group/${groupId}`),
   create: (data) => apiClient.post('/splits', data),
   getById: (id) => apiClient.get(`/splits/${id}`),
   update: (id, data) => apiClient.put(`/splits/${id}`, data),
