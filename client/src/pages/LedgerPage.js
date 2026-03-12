@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import '../pages/Dashboard.css';
 
 const LedgerPage = () => {
-    const { user, logout } = useAuth();
+    const {currentUser, logout } = useAuth();
     const navigate = useNavigate();
     const [ledgers, setLedgers] = useState([]);
     const [error, setError] = useState('');
@@ -84,7 +84,7 @@ const LedgerPage = () => {
                     <button className="nav-btn active">Dashboard</button>
                     <button className="nav-btn" onClick={() => navigate('/transactions')}>Transactions</button>
                     <button className="nav-btn" onClick={() => navigate('/split')}>Split Expense</button>
-                    <span className="user-email">{user?.email}</span>
+                    <span className="user-email">{currentUser?.email}</span>
                     <button className="logout-btn" onClick={handleLogout}>Logout</button>
                 </div>
             </nav>

@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import '../pages/Dashboard.css';
 
 const AnalyticsPage = () => {
-    const { user, logout } = useAuth();
+    const { currentUser, logout } = useAuth();
     const navigate = useNavigate();
 
     const expenseData = {
@@ -39,7 +39,7 @@ const AnalyticsPage = () => {
                     <button className="nav-btn" onClick={() => navigate('/split')}>Split</button>
                     <button className="nav-btn active">Analytics</button>
                     <button className="nav-btn" onClick={() => navigate('/account')}>Accounts</button>
-                    {user && <span className="user-email">{user.email}</span>}
+                    {currentUser && <span className="user-email">{currentUser.email}</span>}
                     <button className="logout-btn" onClick={handleLogout}>Logout</button>
                 </div>
             </nav>

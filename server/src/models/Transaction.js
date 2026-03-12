@@ -2,46 +2,65 @@ const admin = require('../config/firebase');
 const db = admin.database();
 
 class Transaction {
+  static clean(obj) {
+    return Object.fromEntries(Object.entries(obj).filter(([, v]) => v !== undefined));
+  }
+
   // 创建交易
   static async create(userId, transactionData) {
     const ref = db.ref(`users/${userId}/transactions`).push();
     const id = ref.key;
-    await ref.set({
+
+    // Realtime Database 不允许 undefined
+    const description = transactionData.description ?? transactionData.note ?? '';
+
+    const createdAt = transactionData.createdAt || new Date().toISOString();
+
+    const dataToSave = this.clean({
+      // keep any additional fields, but clean() will remove undefined
+      ...transactionData,
+
+      // enforce sanitized/computed values, overriding raw transactionData
       id,
-      date: transactionData.date || new Date().toISOString(),
-      amount: transactionData.amount,
-      category: transactionData.category, // 'expense', 'income', 'transfer'
-      account: transactionData.account, // 账户ID
-      members: transactionData.members || [], // 涉及的成员
-      description: transactionData.description,
-      tags: transactionData.tags || [],
-      createdAt: new Date().toISOString(),
-      ...transactionData
+      date: transactionData.date,
+      amount: Number(transactionData.amount),
+      type: transactionData.type, // expense | income | transfer
+      category: transactionData.category,
+      accountId: transactionData.accountId,
+      accountToId: transactionData.accountToId || '',
+      member: transactionData.member || 'You',
+      description,
+      note: transactionData.note ?? description,
+      createdAt,
     });
-    return { id, ...transactionData };
+
+    await ref.set(dataToSave);
+    return dataToSave;
   }
 
   // 获取用户所有交易
   static async getByUserId(userId) {
     const snapshot = await db.ref(`users/${userId}/transactions`).once('value');
     if (!snapshot.exists()) return [];
-    return Object.values(snapshot.val()).sort((a, b) => new Date(b.date) - new Date(a.date));
+    return Object.values(snapshot.val());
   }
 
   // 按类别获取交易
   static async getByCategory(userId, category) {
     const snapshot = await db.ref(`users/${userId}/transactions`).once('value');
     if (!snapshot.exists()) return [];
-    return Object.values(snapshot.val()).filter(t => t.category === category);
+    return Object.values(snapshot.val()).filter((t) => t.category === category);
   }
 
   // 按日期范围获取交易
   static async getByDateRange(userId, startDate, endDate) {
     const snapshot = await db.ref(`users/${userId}/transactions`).once('value');
     if (!snapshot.exists()) return [];
-    return Object.values(snapshot.val()).filter(t => {
-      const tDate = new Date(t.date);
-      return tDate >= new Date(startDate) && tDate <= new Date(endDate);
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    return Object.values(snapshot.val()).filter((t) => {
+      const d = new Date(t.date);
+      return d >= start && d <= end;
     });
   }
 
@@ -54,7 +73,13 @@ class Transaction {
 
   // 更新交易
   static async update(userId, transactionId, transactionData) {
-    await db.ref(`users/${userId}/transactions/${transactionId}`).update(transactionData);
+    const description = transactionData.description ?? transactionData.note;
+    const payload = this.clean({
+      ...transactionData,
+      ...(description !== undefined ? { description } : {}),
+    });
+
+    await db.ref(`users/${userId}/transactions/${transactionId}`).update(payload);
     return this.getById(userId, transactionId);
   }
 
