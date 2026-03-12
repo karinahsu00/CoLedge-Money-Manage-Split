@@ -32,6 +32,12 @@ const Navbar = () => {
         <Link to="/split" className="navbar-link">
           Split
         </Link>
+        <Link to="/analytics" className="navbar-link">
+          Analytics
+        </Link>
+        <Link to="/account" className="navbar-link">
+          Account
+        </Link>
 
         {currentUser ? (
           <>

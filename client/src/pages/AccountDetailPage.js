@@ -253,8 +253,12 @@ const AccountDetailPage = () => {
           style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
         >
           <h1 style={{ margin: 0 }}>📒 {title}</h1>
-          <button className="nav-btn" onClick={() => navigate('/account')}>
-            ← Back
+          <button
+            className="add-btn"
+            style={{ fontSize: 14, padding: '8px 16px' }}
+            onClick={() => navigate('/account')}
+          >
+            ← Back to Accounts
           </button>
         </div>
 

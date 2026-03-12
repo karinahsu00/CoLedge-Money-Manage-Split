@@ -84,11 +84,50 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// 更新交易
+// 更新交易（含帳戶餘額調整）
+// NOTE: Firebase Realtime Database does not support multi-path atomic transactions in the same way
+// as SQL. The balance reversal + update + re-application below is best-effort and not atomic.
+// Concurrent edits on the same transaction may cause balance drift. For production use, consider
+// using Firebase Firestore with transactions, or a server-side queue.
 router.put('/:id', async (req, res) => {
   try {
     const userId = req.user.uid;
-    const transaction = await Transaction.update(userId, req.params.id, req.body);
+
+    // 1. Load old transaction so we can reverse its balance effect
+    const oldTx = await Transaction.getById(userId, req.params.id);
+    if (!oldTx) return res.status(404).json({ error: 'Transaction not found' });
+
+    // 2. Reverse old balance effects
+    const oldAmount = Number(oldTx.amount || 0);
+    if (oldTx.type === 'expense' && oldTx.accountId) {
+      await Account.updateBalance(userId, oldTx.accountId, +oldAmount);
+    } else if (oldTx.type === 'income' && oldTx.accountId) {
+      await Account.updateBalance(userId, oldTx.accountId, -oldAmount);
+    } else if (oldTx.type === 'transfer') {
+      if (oldTx.accountId) await Account.updateBalance(userId, oldTx.accountId, +oldAmount);
+      if (oldTx.accountToId) await Account.updateBalance(userId, oldTx.accountToId, -oldAmount);
+    }
+
+    // 3. Update the transaction record
+    const body = { ...req.body };
+    if (body.amount !== undefined) body.amount = Number(body.amount);
+    const transaction = await Transaction.update(userId, req.params.id, body);
+
+    // 4. Apply new balance effects using merged values (new overrides old)
+    const newType = body.type !== undefined ? body.type : oldTx.type;
+    const newAmount = body.amount !== undefined ? Number(body.amount) : oldAmount;
+    const newAccountId = body.accountId !== undefined ? body.accountId : oldTx.accountId;
+    const newAccountToId = body.accountToId !== undefined ? body.accountToId : oldTx.accountToId;
+
+    if (newType === 'expense' && newAccountId) {
+      await Account.updateBalance(userId, newAccountId, -newAmount);
+    } else if (newType === 'income' && newAccountId) {
+      await Account.updateBalance(userId, newAccountId, +newAmount);
+    } else if (newType === 'transfer') {
+      if (newAccountId) await Account.updateBalance(userId, newAccountId, -newAmount);
+      if (newAccountToId) await Account.updateBalance(userId, newAccountToId, +newAmount);
+    }
+
     res.json(transaction);
   } catch (err) {
     res.status(500).json({ error: err.message });
