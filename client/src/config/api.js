@@ -1,5 +1,7 @@
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5002/api';
-
+const API_BASE_URL =
+  (typeof window !== 'undefined' && window.__API_BASE_URL__) ||
+  'http://localhost:5002/api';
+  
 const getAuthToken = () => localStorage.getItem('authToken');
 
 const makeRequest = async (url, options = {}) => {
@@ -169,4 +171,9 @@ export const ledgersAPI = {
 
   getByGroupId: (groupId) =>
     makeRequest(`${API_BASE_URL}/ledgers/group/${groupId}`)
+};
+
+// ======== Users API ========
+export const usersAPI = {
+  me: () => makeRequest(`${API_BASE_URL}/me`)
 };

@@ -1,1 +1,14 @@
-{\n  "name": "CoLedge-Money-Manage-Split",\n  "version": "1.0.0",\n  "description": "A project for managing money and splitting expenses.",\n  "scripts": {\n    "client": "cd client && npm start",\n    "server": "cd server && npm start",\n    "dev": "concurrently \"npm run client\" \"npm run server\""\n  },\n  "dependencies": {},\n  "devDependencies": {\n    "concurrently": "^6.0.0"\n  }\n}
+{
+  "name": "CoLedge-Money-Manage-Split",
+  "version": "1.0.0",
+  "description": "A project for managing money and splitting expenses.",
+  "scripts": {
+    "client": "cd client && npm start",
+    "server": "cd server && npm start",
+    "dev": "concurrently \"npm run client\" \"npm run server\"",
+    "build": "cd client && npm run build"
+  },
+  "devDependencies": {
+    "concurrently": "^6.0.0"
+  }
+}
