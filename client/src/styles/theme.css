@@ -1,0 +1,78 @@
+/* ============================================================
+   CoLedge Design System — Forest & Ocean Palette
+   Background: #F5EBE0 (warm cream)
+   ============================================================ */
+:root {
+  /* ── Background & Surfaces ─────────────────────────────── */
+  --color-bg: #F5EBE0;
+  --color-surface: #FFFFFF;
+  --color-surface-alt: #EDE0D4;
+  --color-surface-raised: #EDEDE9;
+
+  /* ── Primary — Forest Green ────────────────────────────── */
+  --color-primary: #3A5A40;
+  --color-primary-dark: #283618;
+  --color-primary-hover: #344E41;
+
+  /* ── Secondary — Sage Green ────────────────────────────── */
+  --color-secondary: #588157;
+  --color-secondary-light: #A3B18A;
+  --color-secondary-pale: #CCD5AE;
+
+  /* ── Text ──────────────────────────────────────────────── */
+  --color-text: #283618;
+  --color-text-muted: #656D4A;
+  --color-text-light: #A3B18A;
+
+  /* ── Borders ───────────────────────────────────────────── */
+  --color-border: #D6CCC2;
+  --color-border-light: #E3D5CA;
+
+  /* ── Info / Link — Ocean Blue ──────────────────────────── */
+  --color-info: #219EBC;
+  --color-info-light: #CAF0F8;
+  --color-link: #6096BA;
+
+  /* ── Success ───────────────────────────────────────────── */
+  --color-success: #588157;
+  --color-success-bg: #CCD5AE;
+
+  /* ── Warning / Accent — Coral ──────────────────────────── */
+  --color-warning: #E07A5F;
+
+  /* ── Danger — Deep Red ─────────────────────────────────── */
+  --color-danger: #BF4342;
+  --color-danger-dark: #8C1C13;
+  --color-danger-bg: #F5CAC3;
+
+  /* ── Warm Accent — Sandy Brown ─────────────────────────── */
+  --color-accent: #A68A64;
+  --color-accent-light: #D5BDAF;
+
+  /* ── Navbar ─────────────────────────────────────────────── */
+  --color-nav-bg: #283618;
+  --color-nav-text: #DAD7CD;
+
+  /* ── Table ──────────────────────────────────────────────── */
+  --color-table-header-bg: #E9EDC9;
+  --color-table-row-hover: #F5EBE0;
+
+  /* ── Shadows ────────────────────────────────────────────── */
+  --shadow-sm: 0 1px 3px rgba(40, 54, 24, 0.07);
+  --shadow-md: 0 2px 10px rgba(40, 54, 24, 0.10);
+  --shadow-lg: 0 4px 20px rgba(40, 54, 24, 0.13);
+
+  /* ── Border Radius ──────────────────────────────────────── */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-pill: 999px;
+}
+
+/* Global base — warm background, smooth text rendering */
+body {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}

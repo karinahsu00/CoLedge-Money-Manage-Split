@@ -329,8 +329,8 @@ const SplitPage = () => {
     const settlements = calculateSettlements();
 
     const isGroupCreator = (group) => {
-        if (!user) return false;
-        return group.createdBy === user.uid || group.createdBy === 'you';
+        if (!currentUser) return false;
+        return group.createdBy === currentUser.uid || group.createdBy === 'you';
     };
 
     const allMembersSelected = selectedGroup
