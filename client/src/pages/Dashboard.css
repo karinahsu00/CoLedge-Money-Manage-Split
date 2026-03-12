@@ -431,10 +431,23 @@ tr:hover {
     background: linear-gradient(135deg, var(--color-danger, #BF4342) 0%, var(--color-danger-dark, #8C1C13) 100%);
 }
 
+.summary-card.analytics-dark-card {
+    background: #283618;
+    color: #f5ebe0;
+}
+
 .summary-card h3 {
     margin: 0 0 8px 0;
     font-size: 13px;
     opacity: 0.9;
+}
+
+.summary-card.analytics-dark-card h3 {
+    font-size: 17px;
+    font-weight: 600;
+    opacity: 1;
+    color: #edede9;
+    letter-spacing: 0.01em;
 }
 
 .summary-card .amount {
