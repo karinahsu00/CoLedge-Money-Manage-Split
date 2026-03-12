@@ -9,6 +9,7 @@ import TransactionsPage from './pages/TransactionsPage';
 import SplitPage from './pages/SplitPage';
 import AccountsPage from './pages/AccountsPage';
 import AccountDetailPage from './pages/AccountDetailPage';
+import AnalyticsPage from './pages/AnalyticsPage';
 
 function App() {
   return (
@@ -59,6 +60,15 @@ function App() {
             element={
               <ProtectedRoute>
                 <AccountDetailPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/analytics"
+            element={
+              <ProtectedRoute>
+                <AnalyticsPage />
               </ProtectedRoute>
             }
           />
