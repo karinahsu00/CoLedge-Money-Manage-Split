@@ -1,0 +1,159 @@
+/*
+ * ============================================================
+ * CoLedge Design System — Theme Variables
+ * ============================================================
+ *
+ * Style: Warm Earthy / Muted Natural + Ocean Accent
+ *
+ * All colors are derived from the project palette:
+ *   Dark greens  : #283618 #344e41 #3a5a40 #414833
+ *   Mid greens   : #606c38 #588157 #3c6e71 #656d4a #81b29a
+ *   Light greens : #a3b18a #dad7cd #ccd5ae #e9edc9
+ *   Blues/ocean  : #669bbc #bde0fe #219ebc #caf0f8 #a3cef1 #6096ba #274c77
+ *   Warm neutrals: #d5bdaf #e3d5ca #f5ebe0 #d6ccc2 #edede9 #ede0d4 #a68a64
+ *   Rose/pink    : #f5e6e8 #f5cac3
+ *   Lavender     : #d5c6e0 #aaa1c8
+ *   Brown/orange : #7f5539 #e07a5f
+ *   Red semantic : #bf4342 #8c1c13
+ *
+ * To adjust the theme, change the values in :root below.
+ * All components reference these variables, so a single change
+ * propagates everywhere.
+ * ============================================================
+ */
+
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Lora:wght@400;500;600&family=Poppins:wght@300;400;500;600;700&display=swap');
+
+:root {
+  /* ── Raw Palette ─────────────────────────────────────────── */
+  --palette-forest-deep:   #283618;
+  --palette-forest:        #344e41;
+  --palette-forest-mid:    #3a5a40;
+  --palette-sage-dark:     #588157;
+  --palette-sage:          #606c38;
+  --palette-sage-mid:      #656d4a;
+  --palette-olive:         #414833;
+  --palette-teal:          #3c6e71;
+  --palette-muted-green:   #81b29a;
+  --palette-sage-light:    #a3b18a;
+  --palette-sage-pale:     #dad7cd;
+  --palette-sage-soft:     #ccd5ae;
+  --palette-sage-faint:    #e9edc9;
+
+  --palette-ocean:         #219ebc;
+  --palette-ocean-dark:    #274c77;
+  --palette-slate-blue:    #6096ba;
+  --palette-steel:         #669bbc;
+  --palette-periwinkle:    #a3cef1;
+  --palette-sky:           #bde0fe;
+  --palette-sky-pale:      #caf0f8;
+
+  --palette-cream:         #f5ebe0;
+  --palette-linen:         #edede9;
+  --palette-sand:          #ede0d4;
+  --palette-warm-gray:     #d6ccc2;
+  --palette-warm-tan:      #d5bdaf;
+  --palette-peach-light:   #e3d5ca;
+  --palette-brown:         #a68a64;
+  --palette-brown-dark:    #7f5539;
+
+  --palette-terracotta:    #e07a5f;
+  --palette-rose:          #f5cac3;
+  --palette-rose-pale:     #f5e6e8;
+
+  --palette-red:           #bf4342;
+  --palette-red-dark:      #8c1c13;
+
+  --palette-lavender:      #d5c6e0;
+  --palette-purple:        #aaa1c8;
+
+  /* ── Design Tokens ───────────────────────────────────────── */
+
+  /* Page & surface */
+  --bg-page:           var(--palette-cream);       /* warm cream background */
+  --bg-surface:        #ffffff;                    /* card / panel white */
+  --bg-surface-alt:    var(--palette-linen);       /* alternate row / muted surface */
+  --bg-nav:            var(--palette-forest);      /* navigation bar */
+  --bg-nav-hover:      var(--palette-forest-mid);  /* nav hover/active */
+
+  /* Text */
+  --text-primary:      var(--palette-forest-deep); /* #283618 – headings, strong body */
+  --text-secondary:    var(--palette-sage-dark);   /* #588157 – sub-headings, labels */
+  --text-muted:        var(--palette-brown);       /* #a68a64 – hints, meta */
+  --text-on-dark:      var(--palette-sage-faint);  /* #e9edc9 – text on dark bg */
+  --text-on-primary:   #ffffff;
+
+  /* Brand primary (buttons, active, links) */
+  --primary:           var(--palette-sage-dark);   /* #588157 */
+  --primary-dark:      var(--palette-forest-mid);  /* #3a5a40 */
+  --primary-light:     var(--palette-sage-light);  /* #a3b18a */
+  --primary-faint:     var(--palette-sage-faint);  /* #e9edc9 */
+
+  /* Accent (ocean teal / call-to-action) */
+  --accent:            var(--palette-ocean);       /* #219ebc */
+  --accent-dark:       var(--palette-slate-blue);  /* #6096ba */
+  --accent-light:      var(--palette-sky-pale);    /* #caf0f8 */
+
+  /* Border */
+  --border:            var(--palette-sage-pale);   /* #dad7cd */
+  --border-light:      var(--palette-sage-faint);  /* #e9edc9 */
+  --border-focus:      var(--palette-sage-dark);   /* #588157 */
+
+  /* Semantic – success */
+  --success:           var(--palette-muted-green); /* #81b29a */
+  --success-bg:        var(--palette-sage-faint);  /* #e9edc9 */
+  --success-dark:      var(--palette-forest-mid);  /* #3a5a40 */
+
+  /* Semantic – danger */
+  --danger:            var(--palette-red);         /* #bf4342 */
+  --danger-bg:         var(--palette-rose-pale);   /* #f5e6e8 */
+  --danger-dark:       var(--palette-red-dark);    /* #8c1c13 */
+
+  /* Semantic – warning */
+  --warning:           var(--palette-terracotta);  /* #e07a5f */
+  --warning-bg:        var(--palette-rose);        /* #f5cac3 */
+
+  /* Semantic – info */
+  --info:              var(--palette-steel);       /* #669bbc */
+  --info-bg:           var(--palette-sky-pale);    /* #caf0f8 */
+
+  /* ── Spacing scale ───────────────────────────────────────── */
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-8:  32px;
+  --space-10: 40px;
+  --space-12: 48px;
+
+  /* ── Border-radius ───────────────────────────────────────── */
+  --radius-sm:   4px;
+  --radius-md:   8px;
+  --radius-lg:   12px;
+  --radius-xl:   16px;
+  --radius-pill: 9999px;
+
+  /* ── Shadows ─────────────────────────────────────────────── */
+  --shadow-sm: 0 1px 3px rgba(40, 54, 24, 0.08);
+  --shadow-md: 0 4px 12px rgba(40, 54, 24, 0.10);
+  --shadow-lg: 0 8px 24px rgba(40, 54, 24, 0.14);
+
+  /* ── Typography ──────────────────────────────────────────── */
+  --font-title: 'Playfair Display', Georgia, serif;
+  --font-body:  'Lora', Georgia, serif;
+  --font-ui:    'Poppins', system-ui, sans-serif;
+
+  --text-xs:   0.75rem;    /* 12px */
+  --text-sm:   0.875rem;   /* 14px */
+  --text-base: 1rem;       /* 16px */
+  --text-lg:   1.125rem;   /* 18px */
+  --text-xl:   1.25rem;    /* 20px */
+  --text-2xl:  1.5rem;     /* 24px */
+  --text-3xl:  1.875rem;   /* 30px */
+  --text-4xl:  2.25rem;    /* 36px */
+
+  /* ── Transition ─────────────────────────────────────────── */
+  --transition: 0.2s ease;
+}

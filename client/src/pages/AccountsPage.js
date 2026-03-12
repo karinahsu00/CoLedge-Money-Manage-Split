@@ -342,7 +342,7 @@ const AccountsPage = () => {
                           )}
                         </td>
 
-                        <td className="tx-amount">{Number(a.balance || 0).toFixed(2)}</td>
+                        <td className="tx-amount">{Number(a.balance || 0).toFixed(2)} {a.currency || 'USD'}</td>
 
                         <td onClick={(e) => e.stopPropagation()}>
                           {isEditing ? (

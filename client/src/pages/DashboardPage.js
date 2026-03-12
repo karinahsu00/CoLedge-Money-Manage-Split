@@ -458,6 +458,9 @@ const DashboardPage = () => {
                             t.type === 'transfer' && toName ? `${fromName} → ${toName}` : fromName;
 
                           const amount = Number(t.amount) || 0;
+                          const localCurrency = t.currency || t.fromCurrency || 'USD';
+                          const usdAmt = t.usdAmount != null ? Number(t.usdAmount) : null;
+                          const showUSD = usdAmt != null && localCurrency !== 'USD';
 
                           return (
                             <tr key={t.id}>
@@ -466,7 +469,12 @@ const DashboardPage = () => {
                               <td>{t.category}</td>
                               <td>{accountLabel}</td>
                               <td>{t.note || ''}</td>
-                              <td className="tx-amount">{amount.toFixed(2)}</td>
+                              <td>
+                                <div className="tx-amount-cell">
+                                  <span className="tx-amount-local">{amount.toFixed(2)} {localCurrency}</span>
+                                  {showUSD && <span className="tx-amount-usd">{usdAmt.toFixed(2)} USD</span>}
+                                </div>
+                              </td>
                               <td>
                                 <button
                                   className="delete-btn"
@@ -503,6 +511,9 @@ const DashboardPage = () => {
                         t.type === 'transfer' && toName ? `${fromName} → ${toName}` : fromName;
 
                       const amount = Number(t.amount) || 0;
+                      const localCurrency2 = t.currency || t.fromCurrency || 'USD';
+                      const usdAmt2 = t.usdAmount != null ? Number(t.usdAmount) : null;
+                      const showUSD2 = usdAmt2 != null && localCurrency2 !== 'USD';
 
                       return (
                         <div key={t.id} className="tx-card">
@@ -513,7 +524,10 @@ const DashboardPage = () => {
                                 {t.type} • {accountLabel}
                               </span>
                             </div>
-                            <div className="tx-card-amount">{amount.toFixed(2)}</div>
+                            <div className="tx-card-amount">
+                              <div>{amount.toFixed(2)} {localCurrency2}</div>
+                              {showUSD2 && <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{usdAmt2.toFixed(2)} USD</div>}
+                            </div>
                           </div>
 
                           <div className="tx-card-meta">

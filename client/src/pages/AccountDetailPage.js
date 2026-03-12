@@ -15,6 +15,59 @@ const toTime = (iso) => {
   return Number.isNaN(t) ? 0 : t;
 };
 
+/** Format a number to 2 decimal places */
+const fmt = (n) => Number(n || 0).toFixed(2);
+
+/**
+ * Render an amount cell showing local currency on the left and USD on the right.
+ * @param {object} t         - transaction object
+ * @param {string} accountId - current account id (to detect transfer direction)
+ * @param {string} accountCurrency - default currency for this account
+ */
+function AmountCell({ t, accountId, accountCurrency }) {
+  let localAmount = null;
+  let localCurrency = accountCurrency || 'USD';
+  let usdAmount = null;
+
+  if (t.type === 'transfer') {
+    if (t.accountId === accountId) {
+      // Transfer OUT from this account
+      localAmount = Number(t.fromAmount ?? t.amount ?? 0);
+      localCurrency = t.fromCurrency || accountCurrency || 'USD';
+    } else {
+      // Transfer IN to this account
+      localAmount = Number(t.toAmount ?? t.amount ?? 0);
+      localCurrency = t.toCurrency || accountCurrency || 'USD';
+    }
+  } else {
+    // income / expense
+    localAmount = Number(t.amount ?? 0);
+    localCurrency = t.currency || accountCurrency || 'USD';
+  }
+
+  // USD amount: use explicit usdAmount if available, otherwise compute if we have the rate
+  if (t.usdAmount != null) {
+    usdAmount = Number(t.usdAmount);
+  } else if (t.fxRateToUSD != null && localCurrency !== 'USD') {
+    usdAmount = localAmount * Number(t.fxRateToUSD);
+  } else if (localCurrency === 'USD') {
+    usdAmount = localAmount;
+  }
+
+  const showUSD = usdAmount != null && localCurrency !== 'USD';
+
+  return (
+    <div className="tx-amount-cell">
+      <span className="tx-amount-local">
+        {fmt(localAmount)} {localCurrency}
+      </span>
+      {showUSD && (
+        <span className="tx-amount-usd">{fmt(usdAmount)} USD</span>
+      )}
+    </div>
+  );
+}
+
 const AccountDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -65,7 +118,7 @@ const AccountDetailPage = () => {
     const list = Array.isArray(transactions) ? transactions : [];
     const rel = list.filter((t) => t && (t.accountId === id || t.accountToId === id));
 
-    // ✅ for running balance, sort ASC by (date, createdAt, id)
+    // for running balance, sort ASC by (date, createdAt, id)
     return rel.sort((a, b) => {
       const da = toTime(a.date);
       const db = toTime(b.date);
@@ -79,6 +132,8 @@ const AccountDetailPage = () => {
     });
   }, [transactions, id]);
 
+  const currency = account?.currency || 'USD';
+
   const summary = useMemo(() => {
     let income = 0;
     let expense = 0;
@@ -86,14 +141,12 @@ const AccountDetailPage = () => {
     let transferOut = 0;
 
     relatedTransactions.forEach((t) => {
-      const amount = Number(t.amount || 0);
-
-      if (t.type === 'income' && t.accountId === id) income += amount;
-      if (t.type === 'expense' && t.accountId === id) expense += amount;
+      if (t.type === 'income' && t.accountId === id) income += Number(t.amount || 0);
+      if (t.type === 'expense' && t.accountId === id) expense += Number(t.amount || 0);
 
       if (t.type === 'transfer') {
-        if (t.accountId === id) transferOut += amount;
-        if (t.accountToId === id) transferIn += amount;
+        if (t.accountId === id) transferOut += Number(t.fromAmount ?? t.amount ?? 0);
+        if (t.accountToId === id) transferIn += Number(t.toAmount ?? t.amount ?? 0);
       }
     });
 
@@ -101,7 +154,7 @@ const AccountDetailPage = () => {
   }, [relatedTransactions, id]);
 
   const monthly = useMemo(() => {
-    const initial = Number(account?.initialBalance ?? 0); // old accounts default 0
+    const initial = Number(account?.initialBalance ?? 0);
     let running = initial;
 
     const map = new Map();
@@ -129,15 +182,15 @@ const AccountDetailPage = () => {
       if (t.type === 'expense' && t.accountId === id) row.expense += amount;
 
       if (t.type === 'transfer') {
-        if (t.accountId === id) row.transferOut += amount;
-        if (t.accountToId === id) row.transferIn += amount;
+        if (t.accountId === id) row.transferOut += Number(t.fromAmount ?? amount);
+        if (t.accountToId === id) row.transferIn += Number(t.toAmount ?? amount);
       }
 
       if (t.type === 'income' && t.accountId === id) running += amount;
       else if (t.type === 'expense' && t.accountId === id) running -= amount;
       else if (t.type === 'transfer') {
-        if (t.accountId === id) running -= amount;
-        if (t.accountToId === id) running += amount;
+        if (t.accountId === id) running -= Number(t.fromAmount ?? amount);
+        if (t.accountToId === id) running += Number(t.toAmount ?? amount);
       }
 
       row.monthEndBalance = running;
@@ -147,10 +200,7 @@ const AccountDetailPage = () => {
   }, [relatedTransactions, id, account?.initialBalance]);
 
   const relatedTransactionsDesc = useMemo(() => {
-    const rel = [...relatedTransactions];
-
-    // ✅ for display, sort DESC by (date, createdAt, id)
-    return rel.sort((a, b) => {
+    return [...relatedTransactions].sort((a, b) => {
       const da = toTime(a.date);
       const db = toTime(b.date);
       if (da !== db) return db - da;
@@ -169,6 +219,7 @@ const AccountDetailPage = () => {
   };
 
   const title = account ? `${account.name}` : 'Account';
+  const balance = Number(account?.balance || 0);
 
   return (
     <div className="dashboard-container">
@@ -213,20 +264,21 @@ const AccountDetailPage = () => {
           <p>Account not found.</p>
         ) : (
           <>
+            {/* ── Overview KPIs ── */}
             <div className="transaction-form-section">
               <h2>Overview</h2>
               <div className="account-overview-grid">
                 <div className="account-kpi">
                   <div className="account-kpi-label">Current Balance</div>
-                  <div className="account-kpi-value">
-                    {Number(account.balance || 0).toFixed(2)}
+                  <div className={`account-kpi-value${balance < 0 ? ' kpi-negative' : ' kpi-positive'}`}>
+                    {fmt(balance)} {currency}
                   </div>
                 </div>
 
                 <div className="account-kpi">
                   <div className="account-kpi-label">Initial Balance</div>
                   <div className="account-kpi-value">
-                    {Number(account.initialBalance ?? 0).toFixed(2)}
+                    {fmt(account.initialBalance ?? 0)} {currency}
                   </div>
                 </div>
 
@@ -237,30 +289,39 @@ const AccountDetailPage = () => {
 
                 <div className="account-kpi">
                   <div className="account-kpi-label">Currency</div>
-                  <div className="account-kpi-value">{account.currency || 'USD'}</div>
+                  <div className="account-kpi-value">{currency}</div>
                 </div>
               </div>
 
               <div style={{ marginTop: 16 }} className="account-overview-grid">
                 <div className="account-kpi">
                   <div className="account-kpi-label">Income</div>
-                  <div className="account-kpi-value">{summary.income.toFixed(2)}</div>
+                  <div className="account-kpi-value kpi-income">
+                    {fmt(summary.income)} {currency}
+                  </div>
                 </div>
                 <div className="account-kpi">
                   <div className="account-kpi-label">Expense</div>
-                  <div className="account-kpi-value">{summary.expense.toFixed(2)}</div>
+                  <div className="account-kpi-value kpi-expense">
+                    {fmt(summary.expense)} {currency}
+                  </div>
                 </div>
                 <div className="account-kpi">
                   <div className="account-kpi-label">Transfer In</div>
-                  <div className="account-kpi-value">{summary.transferIn.toFixed(2)}</div>
+                  <div className="account-kpi-value kpi-income">
+                    {fmt(summary.transferIn)} {currency}
+                  </div>
                 </div>
                 <div className="account-kpi">
                   <div className="account-kpi-label">Transfer Out</div>
-                  <div className="account-kpi-value">{summary.transferOut.toFixed(2)}</div>
+                  <div className="account-kpi-value kpi-expense">
+                    {fmt(summary.transferOut)} {currency}
+                  </div>
                 </div>
               </div>
             </div>
 
+            {/* ── Monthly Summary ── */}
             <div className="transaction-list">
               <h2>Monthly Summary</h2>
               {monthly.length === 0 ? (
@@ -271,36 +332,37 @@ const AccountDetailPage = () => {
                     <thead>
                       <tr>
                         <th>Month</th>
-                        <th style={{ textAlign: 'right' }}>Income</th>
-                        <th style={{ textAlign: 'right' }}>Expense</th>
-                        <th style={{ textAlign: 'right' }}>Transfer In</th>
-                        <th style={{ textAlign: 'right' }}>Transfer Out</th>
-                        <th style={{ textAlign: 'right' }}>Month End Balance</th>
+                        <th style={{ textAlign: 'right' }}>Income ({currency})</th>
+                        <th style={{ textAlign: 'right' }}>Expense ({currency})</th>
+                        <th style={{ textAlign: 'right' }}>Transfer In ({currency})</th>
+                        <th style={{ textAlign: 'right' }}>Transfer Out ({currency})</th>
+                        <th style={{ textAlign: 'right' }}>End Balance ({currency})</th>
                       </tr>
                     </thead>
                     <tbody>
                       {monthly.map((m) => (
                         <tr key={m.ym}>
                           <td className="tx-nowrap">{m.ym}</td>
-                          <td className="tx-amount">{m.income.toFixed(2)}</td>
-                          <td className="tx-amount">{m.expense.toFixed(2)}</td>
-                          <td className="tx-amount">{m.transferIn.toFixed(2)}</td>
-                          <td className="tx-amount">{m.transferOut.toFixed(2)}</td>
+                          <td className="tx-amount">{fmt(m.income)}</td>
+                          <td className="tx-amount">{fmt(m.expense)}</td>
+                          <td className="tx-amount">{fmt(m.transferIn)}</td>
+                          <td className="tx-amount">{fmt(m.transferOut)}</td>
                           <td className="tx-amount">
-                            {Number(m.monthEndBalance || 0).toFixed(2)}
+                            {fmt(m.monthEndBalance)}
                           </td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
 
-                  <p style={{ marginTop: 10, color: '#666', fontSize: 12 }}>
-                    Month End Balance uses (date, createdAt) ordering for same-day transactions.
+                  <p style={{ marginTop: 10, color: 'var(--text-muted)', fontSize: 12 }}>
+                    End Balance uses (date, createdAt) ordering for same-day transactions.
                   </p>
                 </div>
               )}
             </div>
 
+            {/* ── Transactions Table ── */}
             <div className="transaction-list">
               <h2>Transactions</h2>
 
@@ -314,16 +376,14 @@ const AccountDetailPage = () => {
                         <th>Date</th>
                         <th>Type</th>
                         <th>Category</th>
-                        <th>Direction</th>
+                        <th>Dir</th>
                         <th>Other Account</th>
                         <th>Note</th>
-                        <th style={{ textAlign: 'right' }}>Amount</th>
+                        <th>Amount (local / USD)</th>
                       </tr>
                     </thead>
                     <tbody>
                       {relatedTransactionsDesc.map((t) => {
-                        const amount = Number(t.amount || 0);
-
                         let direction = '';
                         let other = '';
 
@@ -353,10 +413,18 @@ const AccountDetailPage = () => {
                             <td className="tx-nowrap">{t.date}</td>
                             <td className="tx-nowrap">{t.type}</td>
                             <td>{t.category}</td>
-                            <td className="tx-nowrap">{direction}</td>
+                            <td className="tx-nowrap">
+                              {direction === 'In' ? (
+                                <span className="tx-dir-in">In</span>
+                              ) : (
+                                <span className="tx-dir-out">Out</span>
+                              )}
+                            </td>
                             <td>{other}</td>
                             <td>{t.note || ''}</td>
-                            <td className="tx-amount">{amount.toFixed(2)}</td>
+                            <td>
+                              <AmountCell t={t} accountId={id} accountCurrency={currency} />
+                            </td>
                           </tr>
                         );
                       })}
@@ -373,3 +441,5 @@ const AccountDetailPage = () => {
 };
 
 export default AccountDetailPage;
+
+

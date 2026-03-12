@@ -1,124 +1,135 @@
+/* Auth.css — uses theme variables from styles/theme.css */
+
 .auth-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-    background: linear-gradient(135deg, var(--color-light-yellow-green) 0%, var(--color-cream) 100%);
-    padding: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, var(--palette-sage-faint) 0%, var(--bg-page) 100%);
+  padding: var(--space-5);
 }
 
 .auth-card {
-    background-color: white;
-    border-radius: 12px;
-    box-shadow: 0 10px 40px rgba(166, 138, 100, 0.15);
-    padding: 40px;
-    width: 100%;
-    max-width: 400px;
+  background-color: var(--bg-surface);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+  padding: var(--space-10);
+  width: 100%;
+  max-width: 420px;
+  border: 1px solid var(--border-light);
 }
 
 .auth-title {
-    text-align: center;
-    color: var(--color-brown);
-    font-size: 2rem;
-    margin-bottom: 0.5rem;
+  text-align: center;
+  color: var(--text-primary);
+  font-size: var(--text-3xl);
+  font-family: var(--font-title);
+  margin-bottom: var(--space-2);
 }
 
 .auth-subtitle {
-    text-align: center;
-    color: var(--color-gray-green);
-    margin-bottom: 2rem;
-    font-size: 0.95rem;
+  text-align: center;
+  color: var(--text-muted);
+  margin-bottom: var(--space-8);
+  font-size: var(--text-sm);
+  font-family: var(--font-ui);
 }
 
 .auth-form {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-    margin-bottom: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  margin-bottom: var(--space-6);
 }
 
 .form-group {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
 }
 
 .form-group label {
-    font-family: var(--font-button);
-    font-weight: 600;
-    color: var(--color-brown);
-    font-size: 0.95rem;
+  font-family: var(--font-ui);
+  font-weight: 600;
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
 }
 
 .form-group input {
-    padding: 12px;
-    font-size: 1rem;
-    border: 2px solid var(--color-gray-green);
-    border-radius: 8px;
-    background-color: var(--color-cream);
-    transition: all 0.3s ease;
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--text-base);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background-color: var(--bg-surface);
+  color: var(--text-primary);
+  transition: border-color var(--transition), box-shadow var(--transition);
 }
 
 .form-group input:focus {
-    border-color: var(--color-dark-green);
-    background-color: white;
-    box-shadow: 0 0 0 4px rgba(132, 169, 140, 0.1);
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px rgba(88, 129, 87, 0.15);
+  outline: none;
 }
 
 .btn {
-    padding: 12px 24px;
-    font-size: 1rem;
-    border: none;
-    border-radius: 8px;
-    font-family: var(--font-button);
-    font-weight: 600;
-    transition: all 0.3s ease;
+  padding: var(--space-3) var(--space-6);
+  font-size: var(--text-base);
+  border: none;
+  border-radius: var(--radius-md);
+  font-family: var(--font-ui);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition);
 }
 
 .btn-primary {
-    background-color: var(--color-dark-green);
-    color: white;
+  background-color: var(--primary);
+  color: var(--text-on-primary);
+  width: 100%;
 }
 
 .btn-primary:hover {
-    background-color: var(--color-brown);
-    transform: translateY(-2px);
-    box-shadow: 0 8px 16px rgba(132, 169, 140, 0.3);
+  background-color: var(--primary-dark);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
 }
 
 .error-message {
-    background-color: #ffe0e0;
-    color: #c62828;
-    padding: 12px;
-    border-radius: 8px;
-    margin-bottom: 1.5rem;
-    border-left: 4px solid #c62828;
-    font-size: 0.9rem;
+  background-color: var(--danger-bg);
+  color: var(--danger-dark);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-5);
+  border-left: 4px solid var(--danger);
+  font-size: var(--text-sm);
+  font-family: var(--font-ui);
 }
 
 .auth-footer {
-    text-align: center;
-    color: var(--color-gray-green);
-    font-size: 0.9rem;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  font-family: var(--font-ui);
 }
 
 .auth-link {
-    color: var(--color-dark-green);
-    font-weight: 600;
-    text-decoration: none;
-    transition: color 0.3s ease;
+  color: var(--primary);
+  font-weight: 600;
+  text-decoration: none;
+  transition: color var(--transition);
 }
 
 .auth-link:hover {
-    color: var(--color-brown);
+  color: var(--primary-dark);
 }
 
 @media (max-width: 600px) {
-    .auth-card {
-        padding: 30px 20px;
-    }
+  .auth-card {
+    padding: var(--space-8) var(--space-5);
+  }
 
-    .auth-title {
-        font-size: 1.75rem;
-    }
+  .auth-title {
+    font-size: var(--text-2xl);
+  }
 }
+
