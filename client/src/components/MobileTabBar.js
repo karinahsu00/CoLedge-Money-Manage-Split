@@ -1,4 +1,5 @@
 import React from 'react';
+<<<<<<< HEAD
 import { useNavigate, useLocation } from 'react-router-dom';
 import './MobileTabBar.css';
 
@@ -37,3 +38,55 @@ const MobileTabBar = () => {
 };
 
 export default MobileTabBar;
+=======
+import { NavLink } from 'react-router-dom';
+import './MobileTabBar.css';
+
+const MobileTabBar = () => {
+  return (
+    <nav className="mobile-tabbar" aria-label="Mobile bottom navigation">
+      <NavLink
+        to="/dashboard"
+        className={({ isActive }) => `mobile-tabbar__item ${isActive ? 'is-active' : ''}`}
+      >
+        <span className="mobile-tabbar__icon" aria-hidden="true">📝</span>
+        <span className="mobile-tabbar__label">Record</span>
+      </NavLink>
+
+      <NavLink
+        to="/split"
+        className={({ isActive }) => `mobile-tabbar__item ${isActive ? 'is-active' : ''}`}
+      >
+        <span className="mobile-tabbar__icon" aria-hidden="true">🧾</span>
+        <span className="mobile-tabbar__label">Split</span>
+      </NavLink>
+
+      <NavLink
+        to="/analytics"
+        className={({ isActive }) => `mobile-tabbar__item ${isActive ? 'is-active' : ''}`}
+      >
+        <span className="mobile-tabbar__icon" aria-hidden="true">📊</span>
+        <span className="mobile-tabbar__label">Analytics</span>
+      </NavLink>
+
+      <NavLink
+        to="/account"
+        className={({ isActive }) => `mobile-tabbar__item ${isActive ? 'is-active' : ''}`}
+      >
+        <span className="mobile-tabbar__icon" aria-hidden="true">🏦</span>
+        <span className="mobile-tabbar__label">Accounts</span>
+      </NavLink>
+
+      <NavLink
+        to="/more"
+        className={({ isActive }) => `mobile-tabbar__item ${isActive ? 'is-active' : ''}`}
+      >
+        <span className="mobile-tabbar__icon" aria-hidden="true">⚙️</span>
+        <span className="mobile-tabbar__label">More</span>
+      </NavLink>
+    </nav>
+  );
+};
+
+export default MobileTabBar;
+>>>>>>> 49b59f9 (Fix mobile UI and accounts rendering)

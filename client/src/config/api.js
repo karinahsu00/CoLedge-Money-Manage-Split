@@ -2,7 +2,7 @@ const API_BASE_URL =
   process.env.REACT_APP_API_BASE_URL ||
   (typeof window !== 'undefined' && window.__API_BASE_URL__) ||
   'http://localhost:5002/api';
-  
+
 const getAuthToken = () => localStorage.getItem('authToken');
 
 const makeRequest = async (url, options = {}) => {
@@ -27,6 +27,7 @@ const makeRequest = async (url, options = {}) => {
 
   return response.json().catch(() => null);
 };
+
 
 // ======== Auth API ========
 export const authAPI = {
@@ -99,6 +100,18 @@ export const transactionsAPI = {
     makeRequest(`${API_BASE_URL}/transactions/${id}`, {
       method: 'DELETE'
     })
+};
+
+// ======== FX API ========
+export const fxAPI = {
+  /**
+   * Get FX rate from backend proxy.
+   * @param {string} from - currency code, e.g. USD
+   * @param {string} to - currency code, e.g. CAD
+   * @returns {Promise<{from:string,to:string,rate:number,source?:string}>}
+   */
+  getRate: (from, to) =>
+    makeRequest(`${API_BASE_URL}/fx/rate?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`)
 };
 
 // ======== Groups API ========

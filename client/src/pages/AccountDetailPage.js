@@ -16,54 +16,33 @@ const toTime = (iso) => {
   return Number.isNaN(t) ? 0 : t;
 };
 
-/**
- * Compute the display amounts for a transaction row.
- *
- * @param {Object} t - The transaction object
- * @param {string} accountId - The ID of the account currently being viewed
- * @param {string} accountCurrency - The currency code of the viewed account
- * @returns {{ localAmount: number, localCurrency: string, usdAmount: number|null, isOut: boolean }}
- *   localAmount/localCurrency: amount in the account's native currency;
- *   usdAmount: USD equivalent (null when unknown);
- *   isOut: true when the amount leaves the viewed account.
- */
 const getAmountDisplay = (t, accountId, accountCurrency) => {
   const cur = accountCurrency || 'USD';
   let localAmount, localCurrency, usdAmount, isOut;
 
   if (t.type === 'transfer') {
     if (t.accountId === accountId) {
-      // Viewing the source side
       localAmount = t.fromAmount != null ? Number(t.fromAmount) : Number(t.amount || 0);
       localCurrency = t.fromCurrency || cur;
       isOut = true;
     } else {
-      // Viewing the destination side
       localAmount = t.toAmount != null ? Number(t.toAmount) : Number(t.amount || 0);
       localCurrency = t.toCurrency || cur;
       isOut = false;
     }
-    // USD: prefer explicit usdAmount
-    if (t.usdAmount != null) {
-      usdAmount = Number(t.usdAmount);
-    } else if (localCurrency === 'USD') {
-      usdAmount = localAmount;
-    } else {
-      usdAmount = null;
-    }
+
+    if (t.usdAmount != null) usdAmount = Number(t.usdAmount);
+    else if (localCurrency === 'USD') usdAmount = localAmount;
+    else usdAmount = null;
   } else {
     localAmount = Number(t.amount || 0);
     localCurrency = t.currency || cur;
     isOut = t.type === 'expense';
-    if (t.usdAmount != null) {
-      usdAmount = Number(t.usdAmount);
-    } else if (t.fxRateToUSD != null) {
-      usdAmount = localAmount * Number(t.fxRateToUSD);
-    } else if (localCurrency === 'USD') {
-      usdAmount = localAmount;
-    } else {
-      usdAmount = null;
-    }
+
+    if (t.usdAmount != null) usdAmount = Number(t.usdAmount);
+    else if (t.fxRateToUSD != null) usdAmount = localAmount * Number(t.fxRateToUSD);
+    else if (localCurrency === 'USD') usdAmount = localAmount;
+    else usdAmount = null;
   }
 
   return { localAmount, localCurrency, usdAmount, isOut };
@@ -119,7 +98,6 @@ const AccountDetailPage = () => {
     const list = Array.isArray(transactions) ? transactions : [];
     const rel = list.filter((t) => t && (t.accountId === id || t.accountToId === id));
 
-    // ✅ for running balance, sort ASC by (date, createdAt, id)
     return rel.sort((a, b) => {
       const da = toTime(a.date);
       const db = toTime(b.date);
@@ -155,7 +133,7 @@ const AccountDetailPage = () => {
   }, [relatedTransactions, id]);
 
   const monthly = useMemo(() => {
-    const initial = Number(account?.initialBalance ?? 0); // old accounts default 0
+    const initial = Number(account?.initialBalance ?? 0);
     let running = initial;
 
     const map = new Map();
@@ -203,7 +181,6 @@ const AccountDetailPage = () => {
   const relatedTransactionsDesc = useMemo(() => {
     const rel = [...relatedTransactions];
 
-    // ✅ for display, sort DESC by (date, createdAt, id)
     return rel.sort((a, b) => {
       const da = toTime(a.date);
       const db = toTime(b.date);
@@ -225,26 +202,16 @@ const AccountDetailPage = () => {
   const title = account ? `${account.name}` : 'Account';
 
   return (
-    <div className="dashboard-container">
+    <div className="dashboard-container account-detail-page">
       <nav className="navbar">
         <div className="navbar-brand">🏦 CoLedge</div>
         <div className="nav-links">
-          <button className="nav-btn" onClick={() => navigate('/dashboard')}>
-            Record
-          </button>
-          <button className="nav-btn" onClick={() => navigate('/split')}>
-            Split
-          </button>
-          <button className="nav-btn" onClick={() => navigate('/analytics')}>
-            Analytics
-          </button>
-          <button className="nav-btn active" onClick={() => navigate('/account')}>
-            Accounts
-          </button>
+          <button className="nav-btn" onClick={() => navigate('/dashboard')}>Record</button>
+          <button className="nav-btn" onClick={() => navigate('/split')}>Split</button>
+          <button className="nav-btn" onClick={() => navigate('/analytics')}>Analytics</button>
+          <button className="nav-btn active" onClick={() => navigate('/account')}>Accounts</button>
           {currentUser && <span className="user-email">{currentUser.email}</span>}
-          <button className="logout-btn" onClick={handleLogout}>
-            Logout
-          </button>
+          <button className="logout-btn" onClick={handleLogout}>Logout</button>
         </div>
       </nav>
 
@@ -276,17 +243,13 @@ const AccountDetailPage = () => {
               <div className="account-overview-grid">
                 <div className={`account-kpi${Number(account.balance || 0) < 0 ? ' kpi-balance-neg' : ''}`}>
                   <div className="account-kpi-label">Current Balance</div>
-                  <div className="account-kpi-value">
-                    {Number(account.balance || 0).toFixed(2)}
-                  </div>
+                  <div className="account-kpi-value">{Number(account.balance || 0).toFixed(2)}</div>
                   <div className="account-kpi-sub">{account.currency || 'USD'}</div>
                 </div>
 
                 <div className="account-kpi">
                   <div className="account-kpi-label">Initial Balance</div>
-                  <div className="account-kpi-value">
-                    {Number(account.initialBalance ?? 0).toFixed(2)}
-                  </div>
+                  <div className="account-kpi-value">{Number(account.initialBalance ?? 0).toFixed(2)}</div>
                   <div className="account-kpi-sub">{account.currency || 'USD'}</div>
                 </div>
 
@@ -327,41 +290,76 @@ const AccountDetailPage = () => {
 
             <div className="transaction-list">
               <h2>Monthly Summary</h2>
+
               {monthly.length === 0 ? (
                 <p>No transactions for this account yet.</p>
               ) : (
-                <div className="tx-table-wrap">
-                  <table className="tx-table">
-                    <thead>
-                      <tr>
-                        <th>Month</th>
-                        <th style={{ textAlign: 'right' }}>Income</th>
-                        <th style={{ textAlign: 'right' }}>Expense</th>
-                        <th style={{ textAlign: 'right' }}>Transfer In</th>
-                        <th style={{ textAlign: 'right' }}>Transfer Out</th>
-                        <th style={{ textAlign: 'right' }}>Month End Balance</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {monthly.map((m) => (
-                        <tr key={m.ym}>
-                          <td className="tx-nowrap">{m.ym}</td>
-                          <td className="tx-amount">{m.income.toFixed(2)}</td>
-                          <td className="tx-amount">{m.expense.toFixed(2)}</td>
-                          <td className="tx-amount">{m.transferIn.toFixed(2)}</td>
-                          <td className="tx-amount">{m.transferOut.toFixed(2)}</td>
-                          <td className="tx-amount">
-                            {Number(m.monthEndBalance || 0).toFixed(2)}
-                          </td>
+                <>
+                  {/* Desktop table */}
+                  <div className="tx-table-wrap monthly-table">
+                    <table className="tx-table">
+                      <thead>
+                        <tr>
+                          <th>Month</th>
+                          <th style={{ textAlign: 'right' }}>Income</th>
+                          <th style={{ textAlign: 'right' }}>Expense</th>
+                          <th style={{ textAlign: 'right' }}>Transfer In</th>
+                          <th style={{ textAlign: 'right' }}>Transfer Out</th>
+                          <th style={{ textAlign: 'right' }}>Month End Balance</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody>
+                        {monthly.map((m) => (
+                          <tr key={m.ym}>
+                            <td className="tx-nowrap">{m.ym}</td>
+                            <td className="tx-amount">{m.income.toFixed(2)}</td>
+                            <td className="tx-amount">{m.expense.toFixed(2)}</td>
+                            <td className="tx-amount">{m.transferIn.toFixed(2)}</td>
+                            <td className="tx-amount">{m.transferOut.toFixed(2)}</td>
+                            <td className="tx-amount">{Number(m.monthEndBalance || 0).toFixed(2)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
 
-                  <p style={{ marginTop: 10, color: '#666', fontSize: 12 }}>
-                    Month End Balance uses (date, createdAt) ordering for same-day transactions.
-                  </p>
-                </div>
+                    <p style={{ marginTop: 10, color: '#666', fontSize: 12 }}>
+                      Month End Balance uses (date, createdAt) ordering for same-day transactions.
+                    </p>
+                  </div>
+
+                  {/* Mobile cards */}
+                  <div className="monthly-cards">
+                    {monthly.map((m) => (
+                      <div className="monthly-card" key={m.ym}>
+                        <div className="monthly-card__top">
+                          <strong>{m.ym}</strong>
+                          <span className="monthly-card__end">
+                            End: {Number(m.monthEndBalance || 0).toFixed(2)} {account.currency || 'USD'}
+                          </span>
+                        </div>
+
+                        <div className="monthly-card__grid">
+                          <div>
+                            <div className="monthly-card__label">Income</div>
+                            <div className="monthly-card__value">{m.income.toFixed(2)}</div>
+                          </div>
+                          <div>
+                            <div className="monthly-card__label">Expense</div>
+                            <div className="monthly-card__value">{m.expense.toFixed(2)}</div>
+                          </div>
+                          <div>
+                            <div className="monthly-card__label">Transfer In</div>
+                            <div className="monthly-card__value">{m.transferIn.toFixed(2)}</div>
+                          </div>
+                          <div>
+                            <div className="monthly-card__label">Transfer Out</div>
+                            <div className="monthly-card__value">{m.transferOut.toFixed(2)}</div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </>
               )}
             </div>
 
@@ -373,7 +371,7 @@ const AccountDetailPage = () => {
               ) : (
                 <>
                   {/* Desktop table */}
-                  <div className="tx-table-wrap">
+                  <div className="tx-table-wrap account-tx-table">
                     <table className="tx-table">
                       <thead>
                         <tr>
@@ -394,18 +392,10 @@ const AccountDetailPage = () => {
                           if (t.type === 'transfer') {
                             if (t.accountId === id) {
                               direction = 'Out';
-                              other =
-                                accountNameById.get(t.accountToId) ||
-                                t.accountTo ||
-                                t.accountToId ||
-                                '';
+                              other = accountNameById.get(t.accountToId) || t.accountTo || t.accountToId || '';
                             } else if (t.accountToId === id) {
                               direction = 'In';
-                              other =
-                                accountNameById.get(t.accountId) ||
-                                t.account ||
-                                t.accountId ||
-                                '';
+                              other = accountNameById.get(t.accountId) || t.account || t.accountId || '';
                             }
                           } else {
                             direction = t.type === 'income' ? 'In' : 'Out';
@@ -415,8 +405,7 @@ const AccountDetailPage = () => {
                           const { localAmount, localCurrency, usdAmount, isOut } =
                             getAmountDisplay(t, id, account.currency);
                           const amountClass = isOut ? 'amount-out' : 'amount-in';
-                          const showUsd =
-                            usdAmount != null && localCurrency !== 'USD';
+                          const showUsd = usdAmount != null && localCurrency !== 'USD';
 
                           return (
                             <tr key={t.id}>
@@ -432,9 +421,7 @@ const AccountDetailPage = () => {
                                     {localAmount.toFixed(2)} {localCurrency}
                                   </span>
                                   {showUsd && (
-                                    <span className="tx-amount-usd">
-                                      {usdAmount.toFixed(2)} USD
-                                    </span>
+                                    <span className="tx-amount-usd">{usdAmount.toFixed(2)} USD</span>
                                   )}
                                 </div>
                               </td>
@@ -446,7 +433,7 @@ const AccountDetailPage = () => {
                   </div>
 
                   {/* Mobile cards */}
-                  <div className="tx-cards">
+                  <div className="tx-cards account-tx-cards">
                     {relatedTransactionsDesc.map((t) => {
                       let direction = '';
                       let other = '';
@@ -454,16 +441,10 @@ const AccountDetailPage = () => {
                       if (t.type === 'transfer') {
                         if (t.accountId === id) {
                           direction = 'Out';
-                          other =
-                            accountNameById.get(t.accountToId) ||
-                            t.accountToId ||
-                            '';
+                          other = accountNameById.get(t.accountToId) || t.accountToId || '';
                         } else if (t.accountToId === id) {
                           direction = 'In';
-                          other =
-                            accountNameById.get(t.accountId) ||
-                            t.accountId ||
-                            '';
+                          other = accountNameById.get(t.accountId) || t.accountId || '';
                         }
                       } else {
                         direction = t.type === 'income' ? 'In' : 'Out';
@@ -472,8 +453,7 @@ const AccountDetailPage = () => {
                       const { localAmount, localCurrency, usdAmount, isOut } =
                         getAmountDisplay(t, id, account.currency);
                       const amountClass = isOut ? 'amount-out' : 'amount-in';
-                      const showUsd =
-                        usdAmount != null && localCurrency !== 'USD';
+                      const showUsd = usdAmount != null && localCurrency !== 'USD';
 
                       return (
                         <div className="tx-card" key={t.id}>
@@ -496,9 +476,7 @@ const AccountDetailPage = () => {
                               )}
                             </div>
                           </div>
-                          {t.note && (
-                            <div className="tx-card-meta">{t.note}</div>
-                          )}
+                          {t.note && <div className="tx-card-meta">{t.note}</div>}
                         </div>
                       );
                     })}
