@@ -32,18 +32,18 @@ const AccountsPage = () => {
   });
 
   const loadAccounts = async () => {
-  try {
-    setError('');
-    setLoading(true);
-    const res = await accountsAPI.getAll();
-    const list = res?.data ?? res;
-    setAccounts(Array.isArray(list) ? list : []);
-  } catch (e) {
-    setError(e?.message || 'Failed to load accounts');
-  } finally {
-    setLoading(false);
-  }
-};
+    try {
+      setError('');
+      setLoading(true);
+      const res = await accountsAPI.getAll();
+      const list = res?.data ?? res;
+      setAccounts(Array.isArray(list) ? list : []);
+    } catch (e) {
+      setError(e?.message || 'Failed to load accounts');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     loadAccounts();
