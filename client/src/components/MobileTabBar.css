@@ -1,30 +1,9 @@
-<<<<<<< HEAD
-/* ── Mobile Bottom Tab Bar ──────────────────────────────────── */
-.mobile-tab-bar {
-=======
+/* 預設在桌面版隱藏 */
 .mobile-tabbar {
->>>>>>> 49b59f9 (Fix mobile UI and accounts rendering)
   display: none;
 }
 
 @media (max-width: 767px) {
-<<<<<<< HEAD
-  .mobile-tab-bar {
-    display: flex;
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    z-index: 1000;
-    background: var(--color-nav-bg, #283618);
-    border-top: 1px solid rgba(163, 177, 138, 0.25);
-    box-shadow: 0 -2px 12px rgba(40, 54, 24, 0.18);
-    padding-bottom: env(safe-area-inset-bottom, 0px);
-  }
-
-  .mobile-tab-bar__item {
-    flex: 1;
-=======
   .mobile-tabbar {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
@@ -35,6 +14,7 @@
     right: 0;
     bottom: 0;
 
+    /* 考慮到 iPhone 下方的安全區域 */
     padding: 8px 10px calc(8px + env(safe-area-inset-bottom));
     background: #283618;
     border-top: 1px solid rgba(218, 215, 205, 0.25);
@@ -45,75 +25,25 @@
     text-decoration: none;
     color: rgba(245, 235, 224, 0.85);
 
->>>>>>> 49b59f9 (Fix mobile UI and accounts rendering)
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-<<<<<<< HEAD
-    gap: 3px;
-    padding: 10px 4px 8px;
-    min-height: 56px;
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    position: relative;
-    color: rgba(218, 215, 205, 0.6);
-    text-decoration: none;
-    transition: color 0.18s;
-    -webkit-tap-highlight-color: transparent;
-  }
-
-  .mobile-tab-bar__item:active {
-    background: rgba(163, 177, 138, 0.12);
-  }
-
-  .mobile-tab-bar__item.active {
-    color: #A3B18A;
-  }
-
-  /* Active indicator bar at top of tab */
-  .mobile-tab-bar__item.active::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 20%;
-    right: 20%;
-    height: 3px;
-    border-radius: 0 0 3px 3px;
-    background: var(--color-secondary-light, #A3B18A);
-  }
-
-  .mobile-tab-bar__icon {
-    font-size: 20px;
-    line-height: 1;
-  }
-
-  .mobile-tab-bar__label {
-    font-size: 10px;
-    font-weight: 500;
-    letter-spacing: 0.01em;
-    line-height: 1;
-  }
-
-  /* Ensure page content doesn't hide behind the tab bar */
-  .dashboard-content {
-    padding-bottom: calc(70px + env(safe-area-inset-bottom, 0px)) !important;
-  }
-}
-=======
 
     padding: 8px 6px;
     border-radius: 10px;
     transition: background 0.15s ease, color 0.15s ease;
     user-select: none;
+    -webkit-tap-highlight-color: transparent;
   }
 
+  .mobile-tabbar__item:active,
   .mobile-tabbar__item:hover {
     background: rgba(163, 177, 138, 0.18);
     color: #fff;
   }
 
+  /* 這裡是配合 NavLink 的 isActive 狀態 */
   .mobile-tabbar__item.is-active {
     background: rgba(163, 177, 138, 0.28);
     color: #fff;
@@ -131,5 +61,9 @@
     letter-spacing: 0.01em;
     line-height: 1;
   }
+
+  /* 確保頁面內容不會被底部的 Tab Bar 遮住 */
+  .dashboard-content {
+    padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px)) !important;
+  }
 }
->>>>>>> 49b59f9 (Fix mobile UI and accounts rendering)

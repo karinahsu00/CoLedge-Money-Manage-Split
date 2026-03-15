@@ -1,10 +1,21 @@
 require('dotenv').config();
+const express = require('express'); // 補上這個
+const cors = require('cors');       // 補上這個
+
+// 請確保這些路徑與你的檔案結構一致，如果沒有這些檔案會報錯
+const authRoutes = require('./routes/auth'); 
+const accountsRoutes = require('./routes/accounts');
+const transactionsRoutes = require('./routes/transactions');
+const groupsRoutes = require('./routes/groups');
+const splitsRoutes = require('./routes/splits');
+const ledgersRoutes = require('./routes/ledgers');
+const fxRoutes = require('./routes/fx');
+const { authMiddleware } = require('./middleware/auth'); // 假設你在這
+const { apiLimiter } = require('./middleware/limiter');   // 假設你在這
 
 const app = express();
 
-// CORS allowlist (production-friendly)
-// Accepts a comma-separated list via CORS_ORIGINS or a single origin via CORS_ORIGIN.
-// In development (NODE_ENV !== 'production') http://localhost:3000 is always allowed.
+// --- CORS 設定 ---
 const parseOrigins = (v) =>
   (v || '')
     .split(',')
@@ -16,39 +27,27 @@ const allowedOrigins = [
   ...(process.env.CORS_ORIGIN ? [process.env.CORS_ORIGIN.trim()] : []),
 ];
 
-const isDev = process.env.NODE_ENV !== 'production';
-if (isDev) {
+if (process.env.NODE_ENV !== 'production') {
   allowedOrigins.push('http://localhost:3000');
 }
 
 const corsOptions = {
   origin: (origin, callback) => {
-    // Allow requests with no Origin header (same-origin, curl, server-to-server)
-    if (!origin) return callback(null, true);
-    // If no allowlist is configured, keep the open behaviour so local dev works out of the box
-    if (allowedOrigins.length === 0) return callback(null, true);
-    if (allowedOrigins.includes(origin)) return callback(null, true);
-    return callback(
-      new Error(
-        `CORS blocked for origin: ${origin}. ` +
-          'Set CORS_ORIGIN or CORS_ORIGINS env var to allow this origin.'
-      )
-    );
+    if (!origin || allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    return callback(new Error(`CORS blocked for origin: ${origin}`));
   },
 };
 
-    // Allow same-origin / server-to-server / curl (no Origin header)
-    if (!origin) return callback(null, true);
-
-    // If no env configured, keep current behavior (allow all) to avoid breaking
-    if (corsOrigins.length === 0) return callback(null, true);
-
-    if (corsOrigins.includes(origin)) return callback(null, true);
-
-    return callback(new Error(`CORS blocked for origin: ${origin}`));
-
+// --- Middleware ---
 app.use(cors(corsOptions));
 app.use(express.json());
+
+// --- Routes ---
+app.get('/', (req, res) => {
+  res.send('Welcome to CoLedge API!');
+});
 
 // Public routes
 app.use('/api/auth', authRoutes);
@@ -67,14 +66,9 @@ app.use('/api/transactions', authMiddleware, transactionsRoutes);
 app.use('/api/groups', authMiddleware, groupsRoutes);
 app.use('/api/splits', authMiddleware, splitsRoutes);
 app.use('/api/ledgers', authMiddleware, ledgersRoutes);
-
-// FX proxy (Protected)
 app.use('/api/fx', authMiddleware, fxRoutes);
 
-app.get('/', (req, res) => {
-  res.send('Welcome to CoLedge API!');
-});
-
+// Error Handling
 app.use((err, req, res, next) => {
   console.error('Error:', err);
   res.status(500).json({ error: 'Internal server error' });
