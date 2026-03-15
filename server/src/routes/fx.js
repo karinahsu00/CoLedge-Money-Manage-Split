@@ -75,8 +75,12 @@ const fetchRateFrankfurter = async (from, to) => {
 // GET /api/fx/rate?from=USD&to=TWD
 router.get('/rate', async (req, res) => {
   try {
-    const from = String(req.query.from || '').toUpperCase();
-    const to = String(req.query.to || '').toUpperCase();
+    let from = String(req.query.from || '').toUpperCase();
+    let to = String(req.query.to || '').toUpperCase();
+
+    // Map NTD to TWD for standard APIs
+    if (from === 'NTD') from = 'TWD';
+    if (to === 'NTD') to = 'TWD';
 
     if (!from || !to) return res.status(400).json({ error: 'from and to are required' });
     if (from === to) return res.json({ from, to, rate: 1, source: 'identity' });
@@ -104,6 +108,10 @@ router.get('/rate', async (req, res) => {
         }
 
         // Both failed and no fallback: return 502 with both errors
+        // But before we fail entirely, return a hardcoded failsafe if TWD is involved
+        if (to === 'TWD' && from === 'USD') return res.json({ from, to, rate: 32.2, source: 'failsafe-fallback' });
+        if (from === 'TWD' && to === 'USD') return res.json({ from, to, rate: 1 / 32.2, source: 'failsafe-fallback' });
+
         return res.status(502).json({
           error: 'fx provider error',
           providers: {
@@ -114,6 +122,13 @@ router.get('/rate', async (req, res) => {
       }
     }
   } catch (err) {
+    // Ultimate fallback before 500
+    const fromFallback = String(req.query.from || '').toUpperCase().replace('NTD', 'TWD');
+    const toFallback = String(req.query.to || '').toUpperCase().replace('NTD', 'TWD');
+    const staticKey = `${fromFallback}->${toFallback}`;
+    if (STATIC_RATES[staticKey]) {
+      return res.json({ from: fromFallback, to: toFallback, rate: STATIC_RATES[staticKey], source: 'emergency-fallback' });
+    }
     return res.status(500).json({ error: err?.message || 'fx error' });
   }
 });
