@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { groupsAPI, splitsAPI } from '../services/api';
 import '../pages/Dashboard.css';
+import MobileTabBar from '../components/MobileTabBar';
 
 const SplitPage = () => {
     const { currentUser, logout } = useAuth();
@@ -416,7 +417,7 @@ const SplitPage = () => {
                 {loadingGroups ? (
                     <p style={{textAlign: 'center', padding: '20px', color: '#999'}}>Loading groups…</p>
                 ) : (
-                    <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '20px', marginBottom: '30px'}}>
+                    <div className="groups-container" style={{marginBottom: '30px'}}>
                         {groups.map(group => (
                             <div
                                 key={group.id}
@@ -564,7 +565,7 @@ const SplitPage = () => {
 
                         {/* ── Expenses Table ── */}
                         <div>
-                            <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px'}}>
+                            <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px', flexWrap: 'wrap', gap: '10px'}}>
                                 <h3 style={{margin: 0}}>Expenses</h3>
                                 <div style={{display: 'flex', alignItems: 'center', gap: '10px'}}>
                                     <label style={{fontWeight: 500}}>Sort by Date:</label>
@@ -578,89 +579,167 @@ const SplitPage = () => {
                             {loadingSplits ? (
                                 <p style={{textAlign: 'center', padding: '20px', color: '#999'}}>Loading expenses…</p>
                             ) : (
-                                <table style={{width: '100%', borderCollapse: 'collapse'}}>
-                                    <thead style={{background: '#f8f9fa'}}>
-                                        <tr>
-                                            <th style={{padding: '12px', textAlign: 'left', fontWeight: 600, borderBottom: '2px solid #ddd'}}>Date</th>
-                                            <th style={{padding: '12px', textAlign: 'left', fontWeight: 600, borderBottom: '2px solid #ddd'}}>Description</th>
-                                            <th style={{padding: '12px', textAlign: 'left', fontWeight: 600, borderBottom: '2px solid #ddd'}}>Amount</th>
-                                            <th style={{padding: '12px', textAlign: 'left', fontWeight: 600, borderBottom: '2px solid #ddd'}}>Paid By</th>
-                                            <th style={{padding: '12px', textAlign: 'left', fontWeight: 600, borderBottom: '2px solid #ddd'}}>Split Among</th>
-                                            <th style={{padding: '12px', textAlign: 'left', fontWeight: 600, borderBottom: '2px solid #ddd'}}>Action</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {sortedExpenses.length > 0 ? sortedExpenses.map(expense => (
+                                <>
+                                    {/* Desktop table */}
+                                    <div className="split-table-wrap">
+                                        <table style={{width: '100%', borderCollapse: 'collapse'}}>
+                                            <thead style={{background: '#f8f9fa'}}>
+                                                <tr>
+                                                    <th style={{padding: '12px', textAlign: 'left', fontWeight: 600, borderBottom: '2px solid #ddd'}}>Date</th>
+                                                    <th style={{padding: '12px', textAlign: 'left', fontWeight: 600, borderBottom: '2px solid #ddd'}}>Description</th>
+                                                    <th style={{padding: '12px', textAlign: 'left', fontWeight: 600, borderBottom: '2px solid #ddd'}}>Amount</th>
+                                                    <th style={{padding: '12px', textAlign: 'left', fontWeight: 600, borderBottom: '2px solid #ddd'}}>Paid By</th>
+                                                    <th style={{padding: '12px', textAlign: 'left', fontWeight: 600, borderBottom: '2px solid #ddd'}}>Split Among</th>
+                                                    <th style={{padding: '12px', textAlign: 'left', fontWeight: 600, borderBottom: '2px solid #ddd'}}>Action</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {sortedExpenses.length > 0 ? sortedExpenses.map(expense => (
+                                                    editingExpenseId === expense.id ? (
+                                                        /* ── Inline edit row for expense ── */
+                                                        <tr key={expense.id} style={{background: '#f0f4ff', borderBottom: '1px solid #eee'}}>
+                                                            <td style={{padding: '8px'}}>
+                                                                <input type="date" value={editExpenseForm.date} onChange={e => setEditExpenseForm(p => ({...p, date: e.target.value}))} className="form-input" style={{width: '130px'}} />
+                                                            </td>
+                                                            <td style={{padding: '8px'}}>
+                                                                <input type="text" value={editExpenseForm.description} onChange={e => setEditExpenseForm(p => ({...p, description: e.target.value}))} className="form-input" style={{width: '120px'}} />
+                                                            </td>
+                                                            <td style={{padding: '8px'}}>
+                                                                <input type="number" step="0.01" value={editExpenseForm.amount} onChange={e => setEditExpenseForm(p => ({...p, amount: e.target.value}))} className="form-input" style={{width: '90px'}} />
+                                                            </td>
+                                                            <td style={{padding: '8px'}}>
+                                                                <select value={editExpenseForm.paidBy} onChange={e => setEditExpenseForm(p => ({...p, paidBy: e.target.value}))} className="form-input">
+                                                                    {(selectedGroup.members || []).map(m => <option key={m} value={m}>{m}</option>)}
+                                                                </select>
+                                                            </td>
+                                                            <td style={{padding: '8px'}}>
+                                                                <div style={{display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px'}}>
+                                                                    <button
+                                                                        type="button"
+                                                                        className={editAllMembersSelected ? 'delete-btn' : 'add-btn'}
+                                                                        style={{padding: '3px 10px', fontSize: '12px'}}
+                                                                        onClick={handleEditSelectAllMembers}
+                                                                    >
+                                                                        {editAllMembersSelected ? 'Deselect All' : 'All'}
+                                                                    </button>
+                                                                </div>
+                                                                {(selectedGroup.members || []).map(m => (
+                                                                    <label key={m} style={{display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '4px', cursor: 'pointer'}}>
+                                                                        <input
+                                                                            type="checkbox"
+                                                                            checked={(editExpenseForm.splitWith || []).includes(m)}
+                                                                            onChange={() => handleEditToggleSplitMember(m)}
+                                                                        />
+                                                                        <span style={{fontSize: '12px'}}>{m}</span>
+                                                                    </label>
+                                                                ))}
+                                                            </td>
+                                                            <td style={{padding: '8px'}}>
+                                                                <button className="add-btn" style={{padding: '5px 10px', fontSize: '12px', marginRight: '5px', display: 'block', marginBottom: '5px'}} onClick={() => handleEditExpenseSave(expense.id)}>Save</button>
+                                                                <button className="cancel-btn" style={{padding: '5px 10px', fontSize: '12px'}} onClick={handleEditExpenseCancel}>Cancel</button>
+                                                            </td>
+                                                        </tr>
+                                                    ) : (
+                                                        /* ── Normal display row ── */
+                                                        <tr key={expense.id} style={{borderBottom: '1px solid #eee'}}>
+                                                            <td style={{padding: '12px'}}>{expense.date ? expense.date.split('T')[0] : ''}</td>
+                                                            <td style={{padding: '12px'}}>{expense.description}</td>
+                                                            <td style={{padding: '12px', color: '#ff6b6b', fontWeight: 500}}>${parseFloat(expense.totalAmount || expense.amount || 0).toFixed(2)}</td>
+                                                            <td style={{padding: '12px'}}>{expense.paidBy}</td>
+                                                            <td style={{padding: '12px', fontSize: '12px'}}>{(expense.splitWith || []).join(', ')}</td>
+                                                            <td style={{padding: '12px'}}>
+                                                                <button className="edit-btn" style={{marginRight: '5px'}} onClick={() => handleEditExpenseStart(expense)}>Edit</button>
+                                                                <button className="delete-btn" onClick={() => handleDeleteExpense(expense.id)}>Delete</button>
+                                                            </td>
+                                                        </tr>
+                                                    )
+                                                )) : (
+                                                    <tr>
+                                                        <td colSpan="6" style={{padding: '20px', textAlign: 'center', color: '#999'}}>No expenses yet</td>
+                                                    </tr>
+                                                )}
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                    {/* Mobile cards */}
+                                    <div className="split-cards">
+                                        {sortedExpenses.length === 0 ? (
+                                            <p style={{textAlign: 'center', padding: '20px', color: '#999'}}>No expenses yet</p>
+                                        ) : sortedExpenses.map(expense => (
                                             editingExpenseId === expense.id ? (
-                                                /* ── Inline edit row for expense ── */
-                                                <tr key={expense.id} style={{background: '#f0f4ff', borderBottom: '1px solid #eee'}}>
-                                                    <td style={{padding: '8px'}}>
-                                                        <input type="date" value={editExpenseForm.date} onChange={e => setEditExpenseForm(p => ({...p, date: e.target.value}))} className="form-input" style={{width: '130px'}} />
-                                                    </td>
-                                                    <td style={{padding: '8px'}}>
-                                                        <input type="text" value={editExpenseForm.description} onChange={e => setEditExpenseForm(p => ({...p, description: e.target.value}))} className="form-input" style={{width: '120px'}} />
-                                                    </td>
-                                                    <td style={{padding: '8px'}}>
-                                                        <input type="number" step="0.01" value={editExpenseForm.amount} onChange={e => setEditExpenseForm(p => ({...p, amount: e.target.value}))} className="form-input" style={{width: '90px'}} />
-                                                    </td>
-                                                    <td style={{padding: '8px'}}>
+                                                /* ── Inline edit card ── */
+                                                <div key={expense.id} className="split-card split-card--editing">
+                                                    <div className="form-group">
+                                                        <label>Date</label>
+                                                        <input type="date" value={editExpenseForm.date} onChange={e => setEditExpenseForm(p => ({...p, date: e.target.value}))} className="form-input" />
+                                                    </div>
+                                                    <div className="form-group">
+                                                        <label>Description</label>
+                                                        <input type="text" value={editExpenseForm.description} onChange={e => setEditExpenseForm(p => ({...p, description: e.target.value}))} className="form-input" />
+                                                    </div>
+                                                    <div className="form-group">
+                                                        <label>Amount ($)</label>
+                                                        <input type="number" step="0.01" value={editExpenseForm.amount} onChange={e => setEditExpenseForm(p => ({...p, amount: e.target.value}))} className="form-input" />
+                                                    </div>
+                                                    <div className="form-group">
+                                                        <label>Paid By</label>
                                                         <select value={editExpenseForm.paidBy} onChange={e => setEditExpenseForm(p => ({...p, paidBy: e.target.value}))} className="form-input">
                                                             {(selectedGroup.members || []).map(m => <option key={m} value={m}>{m}</option>)}
                                                         </select>
-                                                    </td>
-                                                    <td style={{padding: '8px'}}>
-                                                        <div style={{display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px'}}>
-                                                            <button
-                                                                type="button"
-                                                                className={editAllMembersSelected ? 'delete-btn' : 'add-btn'}
-                                                                style={{padding: '3px 10px', fontSize: '12px'}}
-                                                                onClick={handleEditSelectAllMembers}
-                                                            >
+                                                    </div>
+                                                    <div className="form-group">
+                                                        <div style={{display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px'}}>
+                                                            <label style={{margin: 0}}>Split Among</label>
+                                                            <button type="button" className={editAllMembersSelected ? 'delete-btn' : 'add-btn'} style={{padding: '3px 10px', fontSize: '12px'}} onClick={handleEditSelectAllMembers}>
                                                                 {editAllMembersSelected ? 'Deselect All' : 'All'}
                                                             </button>
                                                         </div>
-                                                        {(selectedGroup.members || []).map(m => (
-                                                            <label key={m} style={{display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '4px', cursor: 'pointer'}}>
-                                                                <input
-                                                                    type="checkbox"
-                                                                    checked={(editExpenseForm.splitWith || []).includes(m)}
-                                                                    onChange={() => handleEditToggleSplitMember(m)}
-                                                                />
-                                                                <span style={{fontSize: '12px'}}>{m}</span>
-                                                            </label>
-                                                        ))}
-                                                    </td>
-                                                    <td style={{padding: '8px'}}>
-                                                        <button className="add-btn" style={{padding: '5px 10px', fontSize: '12px', marginRight: '5px', display: 'block', marginBottom: '5px'}} onClick={() => handleEditExpenseSave(expense.id)}>Save</button>
-                                                        <button className="cancel-btn" style={{padding: '5px 10px', fontSize: '12px'}} onClick={handleEditExpenseCancel}>Cancel</button>
-                                                    </td>
-                                                </tr>
+                                                        <div style={{display: 'flex', flexWrap: 'wrap', gap: '8px'}}>
+                                                            {(selectedGroup.members || []).map(m => (
+                                                                <label key={m} style={{display: 'flex', alignItems: 'center', gap: '5px', padding: '6px 10px', background: 'white', borderRadius: '5px', border: '1px solid #ddd', cursor: 'pointer'}}>
+                                                                    <input type="checkbox" checked={(editExpenseForm.splitWith || []).includes(m)} onChange={() => handleEditToggleSplitMember(m)} />
+                                                                    <span style={{fontSize: '13px'}}>{m}</span>
+                                                                </label>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                    <div style={{display: 'flex', gap: '10px', marginTop: '12px'}}>
+                                                        <button className="add-btn" style={{flex: 1}} onClick={() => handleEditExpenseSave(expense.id)}>Save</button>
+                                                        <button className="cancel-btn" style={{flex: 1}} onClick={handleEditExpenseCancel}>Cancel</button>
+                                                    </div>
+                                                </div>
                                             ) : (
-                                                /* ── Normal display row ── */
-                                                <tr key={expense.id} style={{borderBottom: '1px solid #eee'}}>
-                                                    <td style={{padding: '12px'}}>{expense.date ? expense.date.split('T')[0] : ''}</td>
-                                                    <td style={{padding: '12px'}}>{expense.description}</td>
-                                                    <td style={{padding: '12px', color: '#ff6b6b', fontWeight: 500}}>${parseFloat(expense.totalAmount || expense.amount || 0).toFixed(2)}</td>
-                                                    <td style={{padding: '12px'}}>{expense.paidBy}</td>
-                                                    <td style={{padding: '12px', fontSize: '12px'}}>{(expense.splitWith || []).join(', ')}</td>
-                                                    <td style={{padding: '12px'}}>
-                                                        <button className="edit-btn" style={{marginRight: '5px'}} onClick={() => handleEditExpenseStart(expense)}>Edit</button>
+                                                /* ── Normal display card ── */
+                                                <div key={expense.id} className="split-card">
+                                                    <div className="split-card__top">
+                                                        <div className="split-card__info">
+                                                            <div className="split-card__desc">{expense.description}</div>
+                                                            <div className="split-card__meta">{expense.date ? expense.date.split('T')[0] : ''}</div>
+                                                        </div>
+                                                        <div className="split-card__amount">
+                                                            ${parseFloat(expense.totalAmount || expense.amount || 0).toFixed(2)}
+                                                        </div>
+                                                    </div>
+                                                    <div className="split-card__detail">
+                                                        <span>Paid by <strong>{expense.paidBy}</strong></span>
+                                                        <span>Split: {(expense.splitWith || []).join(', ')}</span>
+                                                    </div>
+                                                    <div className="split-card__actions">
+                                                        <button className="edit-btn" onClick={() => handleEditExpenseStart(expense)}>Edit</button>
                                                         <button className="delete-btn" onClick={() => handleDeleteExpense(expense.id)}>Delete</button>
-                                                    </td>
-                                                </tr>
+                                                    </div>
+                                                </div>
                                             )
-                                        )) : (
-                                            <tr>
-                                                <td colSpan="6" style={{padding: '20px', textAlign: 'center', color: '#999'}}>No expenses yet</td>
-                                            </tr>
-                                        )}
-                                    </tbody>
-                                </table>
+                                        ))}
+                                    </div>
+                                </>
                             )}
                         </div>
                     </div>
                 )}
             </div>
+            <MobileTabBar />
         </div>
     );
 };

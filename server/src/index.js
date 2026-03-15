@@ -1,36 +1,59 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const rateLimit = require('express-rate-limit');
 
-const authMiddleware = require('./middleware/auth');
-const authRoutes = require('./routes/auth');
+// 1. 確保這裡只引入存在的檔案
+const authRoutes = require('./routes/auth'); 
 const accountsRoutes = require('./routes/accounts');
 const transactionsRoutes = require('./routes/transactions');
 const groupsRoutes = require('./routes/groups');
 const splitsRoutes = require('./routes/splits');
 const ledgersRoutes = require('./routes/ledgers');
+const fxRoutes = require('./routes/fx');
+
+// 這裡保留 auth.js，因為截圖顯示它存在
+const authMiddleware = require('./middleware/auth');
 
 const app = express();
 
-const apiLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 100,
-  standardHeaders: true,
-  legacyHeaders: false,
-});
+// --- CORS 設定 ---
+const parseOrigins = (v) =>
+  (v || '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
 
-app.use((req, res, next) => {
-  console.log('[REQ]', req.method, req.url);
-  next();
-});
+const allowedOrigins = [
+  ...parseOrigins(process.env.CORS_ORIGINS),
+  ...(process.env.CORS_ORIGIN ? [process.env.CORS_ORIGIN.trim()] : []),
+];
 
-app.use(cors());
+if (process.env.NODE_ENV !== 'production') {
+  allowedOrigins.push('http://localhost:3000');
+}
+
+const corsOptions = {
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    return callback(new Error(`CORS blocked for origin: ${origin}`));
+  },
+};
+
+// --- Middleware ---
+app.use(cors(corsOptions));
 app.use(express.json());
 
-// Public routes
+// --- Routes ---
+app.get('/', (req, res) => {
+  res.send('Welcome to CoLedge API!');
+});
+
 app.use('/api/auth', authRoutes);
 
-app.get('/api/me', apiLimiter, authMiddleware, (req, res) => {
+// 2. 這裡原本有 apiLimiter，我幫你拿掉了
+app.get('/api/me', authMiddleware, (req, res) => {
   const u = req.user || {};
   res.json({
     uid: u.uid || u.user_id || u.sub || null,
@@ -44,11 +67,9 @@ app.use('/api/transactions', authMiddleware, transactionsRoutes);
 app.use('/api/groups', authMiddleware, groupsRoutes);
 app.use('/api/splits', authMiddleware, splitsRoutes);
 app.use('/api/ledgers', authMiddleware, ledgersRoutes);
+app.use('/api/fx', authMiddleware, fxRoutes);
 
-app.get('/', (req, res) => {
-  res.send('Welcome to CoLedge API!');
-});
-
+// Error Handling
 app.use((err, req, res, next) => {
   console.error('Error:', err);
   res.status(500).json({ error: 'Internal server error' });

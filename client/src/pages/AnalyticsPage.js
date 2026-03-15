@@ -3,11 +3,22 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { transactionsAPI, accountsAPI } from '../config/api';
 import '../pages/Dashboard.css';
+import MobileTabBar from '../components/MobileTabBar';
 
-// ── Pie chart colours ────────────────────────────────────────────────────────
+// ── Pie chart colours — warm soft academia palette ───────────────────────────
 const COLORS = [
-    '#667eea', '#ff6b6b', '#51cf66', '#fcc419', '#74c0fc',
-    '#f783ac', '#a9e34b', '#ff8787', '#63e6be', '#e599f7',
+    '#606c38', // olive green
+    '#81b29a', // dusty sage
+    '#3c6e71', // dark teal
+    '#669bbc', // ocean blue
+    '#6096ba', // slate blue
+    '#aaa1c8', // soft lavender
+    '#a68a64', // sandy brown
+    '#e07a5f', // terracotta
+    '#d5bdaf', // warm blush
+    '#ccd5ae', // pale olive
+    '#656d4a', // dark olive
+    '#a3b18a', // light sage
 ];
 
 // ── SVG Pie chart ────────────────────────────────────────────────────────────
@@ -74,34 +85,57 @@ const PieChart = ({ data }) => {
 const BreakdownTable = ({ data, label }) => {
     const total = data.reduce((s, d) => s + d.value, 0);
     return (
-        <table className="analytics-table">
-            <thead>
-                <tr>
-                    <th>#</th>
-                    <th>{label}</th>
-                    <th>Amount</th>
-                    <th>Share</th>
-                </tr>
-            </thead>
-            <tbody>
-                {data.length === 0 ? (
+        <>
+            {/* Desktop table */}
+            <table className="analytics-table analytics-table-desktop">
+                <thead>
                     <tr>
-                        <td colSpan="4" style={{ textAlign: 'center', padding: '20px' }}>
-                            No data for the selected period
-                        </td>
+                        <th>#</th>
+                        <th>{label}</th>
+                        <th>Amount</th>
+                        <th>Share</th>
                     </tr>
+                </thead>
+                <tbody>
+                    {data.length === 0 ? (
+                        <tr>
+                            <td colSpan="4" style={{ textAlign: 'center', padding: '20px' }}>
+                                No data for the selected period
+                            </td>
+                        </tr>
+                    ) : (
+                        data.map((d, i) => (
+                            <tr key={i}>
+                                <td>{i + 1}</td>
+                                <td>{d.label || '(unknown)'}</td>
+                                <td>${d.value.toFixed(2)}</td>
+                                <td>{total > 0 ? ((d.value / total) * 100).toFixed(1) : 0}%</td>
+                            </tr>
+                        ))
+                    )}
+                </tbody>
+            </table>
+
+            {/* Mobile cards */}
+            <div className="analytics-cards">
+                {data.length === 0 ? (
+                    <p className="analytics-empty">No data for the selected period</p>
                 ) : (
                     data.map((d, i) => (
-                        <tr key={i}>
-                            <td>{i + 1}</td>
-                            <td>{d.label || '(unknown)'}</td>
-                            <td>${d.value.toFixed(2)}</td>
-                            <td>{total > 0 ? ((d.value / total) * 100).toFixed(1) : 0}%</td>
-                        </tr>
+                        <div key={i} className="analytics-card">
+                            <div className="analytics-card__rank">#{i + 1}</div>
+                            <div className="analytics-card__body">
+                                <div className="analytics-card__label">{d.label || '(unknown)'}</div>
+                                <div className="analytics-card__amount">${d.value.toFixed(2)}</div>
+                            </div>
+                            <div className="analytics-card__share">
+                                {total > 0 ? ((d.value / total) * 100).toFixed(1) : 0}%
+                            </div>
+                        </div>
                     ))
                 )}
-            </tbody>
-        </table>
+            </div>
+        </>
     );
 };
 
@@ -350,12 +384,12 @@ const AnalyticsPage = () => {
                     <>
                         {/* ── Summary ── */}
                         <div className="summary-cards">
-                            <div className="summary-card balance-positive">
+                            <div className="summary-card analytics-dark-card">
                                 <h3>Net Income (Income - Expense)</h3>
                                 <p className="amount">${netIncome.toFixed(2)}</p>
                             </div>
 
-                            <div className="summary-card balance-positive">
+                            <div className="summary-card analytics-dark-card">
                                 <h3>Total Transfers</h3>
                                 <p className="amount">${totalTransferAmount.toFixed(2)}</p>
                             </div>
@@ -390,6 +424,7 @@ const AnalyticsPage = () => {
                     </>
                 )}
             </div>
+            <MobileTabBar />
         </div>
     );
 };

@@ -652,6 +652,14 @@ tr:hover {
   color: inherit;
 }
 
+.summary-card.analytics-dark-card h3 {
+    font-size: 17px;
+    font-weight: 600;
+    opacity: 1;
+    color: #edede9;
+    letter-spacing: 0.01em;
+}
+
 .summary-card .amount {
   font-size: var(--text-3xl);
   font-weight: 700;

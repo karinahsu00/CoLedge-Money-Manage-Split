@@ -10,3 +10,14 @@ root.render(
     <App />
   </React.StrictMode>
 );
+
+// Register service worker for PWA / offline support
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker
+      .register(`${process.env.PUBLIC_URL}/service-worker.js`)
+      .catch(() => {
+        // Service worker registration failed — app still works online
+      });
+  });
+}

@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { accountsAPI, transactionsAPI } from '../config/api';
 import { accountTypeLabel } from '../constants/accountTypes';
 import './Dashboard.css';
+import MobileTabBar from '../components/MobileTabBar';
 
 const ym = (dateStr) => {
   if (!dateStr || typeof dateStr !== 'string') return 'Unknown';
@@ -222,26 +223,16 @@ const AccountDetailPage = () => {
   const balance = Number(account?.balance || 0);
 
   return (
-    <div className="dashboard-container">
+    <div className="dashboard-container account-detail-page">
       <nav className="navbar">
         <div className="navbar-brand">🏦 CoLedge</div>
         <div className="nav-links">
-          <button className="nav-btn" onClick={() => navigate('/dashboard')}>
-            Record
-          </button>
-          <button className="nav-btn" onClick={() => navigate('/split')}>
-            Split
-          </button>
-          <button className="nav-btn" onClick={() => navigate('/analytics')}>
-            Analytics
-          </button>
-          <button className="nav-btn active" onClick={() => navigate('/account')}>
-            Accounts
-          </button>
+          <button className="nav-btn" onClick={() => navigate('/dashboard')}>Record</button>
+          <button className="nav-btn" onClick={() => navigate('/split')}>Split</button>
+          <button className="nav-btn" onClick={() => navigate('/analytics')}>Analytics</button>
+          <button className="nav-btn active" onClick={() => navigate('/account')}>Accounts</button>
           {currentUser && <span className="user-email">{currentUser.email}</span>}
-          <button className="logout-btn" onClick={handleLogout}>
-            Logout
-          </button>
+          <button className="logout-btn" onClick={handleLogout}>Logout</button>
         </div>
       </nav>
 
@@ -251,8 +242,12 @@ const AccountDetailPage = () => {
           style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
         >
           <h1 style={{ margin: 0 }}>📒 {title}</h1>
-          <button className="nav-btn" onClick={() => navigate('/account')}>
-            ← Back
+          <button
+            className="add-btn"
+            style={{ fontSize: 14, padding: '8px 16px' }}
+            onClick={() => navigate('/account')}
+          >
+            ← Back to Accounts
           </button>
         </div>
 
@@ -268,7 +263,7 @@ const AccountDetailPage = () => {
             <div className="transaction-form-section">
               <h2>Overview</h2>
               <div className="account-overview-grid">
-                <div className="account-kpi">
+                <div className={`account-kpi${Number(account.balance || 0) < 0 ? ' kpi-balance-neg' : ''}`}>
                   <div className="account-kpi-label">Current Balance</div>
                   <div className={`account-kpi-value${balance < 0 ? ' kpi-negative' : ' kpi-positive'}`}>
                     {fmt(balance)} {currency}
@@ -294,25 +289,25 @@ const AccountDetailPage = () => {
               </div>
 
               <div style={{ marginTop: 16 }} className="account-overview-grid">
-                <div className="account-kpi">
+                <div className="account-kpi kpi-income">
                   <div className="account-kpi-label">Income</div>
                   <div className="account-kpi-value kpi-income">
                     {fmt(summary.income)} {currency}
                   </div>
                 </div>
-                <div className="account-kpi">
+                <div className="account-kpi kpi-expense">
                   <div className="account-kpi-label">Expense</div>
                   <div className="account-kpi-value kpi-expense">
                     {fmt(summary.expense)} {currency}
                   </div>
                 </div>
-                <div className="account-kpi">
+                <div className="account-kpi kpi-income">
                   <div className="account-kpi-label">Transfer In</div>
                   <div className="account-kpi-value kpi-income">
                     {fmt(summary.transferIn)} {currency}
                   </div>
                 </div>
-                <div className="account-kpi">
+                <div className="account-kpi kpi-expense">
                   <div className="account-kpi-label">Transfer Out</div>
                   <div className="account-kpi-value kpi-expense">
                     {fmt(summary.transferOut)} {currency}
@@ -324,6 +319,7 @@ const AccountDetailPage = () => {
             {/* ── Monthly Summary ── */}
             <div className="transaction-list">
               <h2>Monthly Summary</h2>
+
               {monthly.length === 0 ? (
                 <p>No transactions for this account yet.</p>
               ) : (
@@ -351,9 +347,20 @@ const AccountDetailPage = () => {
                             {fmt(m.monthEndBalance)}
                           </td>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody>
+                        {monthly.map((m) => (
+                          <tr key={m.ym}>
+                            <td className="tx-nowrap">{m.ym}</td>
+                            <td className="tx-amount">{m.income.toFixed(2)}</td>
+                            <td className="tx-amount">{m.expense.toFixed(2)}</td>
+                            <td className="tx-amount">{m.transferIn.toFixed(2)}</td>
+                            <td className="tx-amount">{m.transferOut.toFixed(2)}</td>
+                            <td className="tx-amount">{Number(m.monthEndBalance || 0).toFixed(2)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
 
                   <p style={{ marginTop: 10, color: 'var(--text-muted)', fontSize: 12 }}>
                     End Balance uses (date, createdAt) ordering for same-day transactions.
@@ -403,10 +410,6 @@ const AccountDetailPage = () => {
                               t.accountId ||
                               '';
                           }
-                        } else {
-                          direction = t.type === 'income' ? 'In' : 'Out';
-                          other = '';
-                        }
 
                         return (
                           <tr key={t.id}>
@@ -436,6 +439,7 @@ const AccountDetailPage = () => {
           </>
         )}
       </div>
+      <MobileTabBar />
     </div>
   );
 };
