@@ -258,7 +258,7 @@ const AccountDetailPage = () => {
         ) : !account ? (
           <p>Account not found.</p>
         ) : (
-          <>
+          <React.Fragment>
             {/* ── Overview KPIs ── */}
             <div className="transaction-form-section">
               <h2>Overview</h2>
@@ -343,24 +343,11 @@ const AccountDetailPage = () => {
                           <td className="tx-amount">{fmt(m.expense)}</td>
                           <td className="tx-amount">{fmt(m.transferIn)}</td>
                           <td className="tx-amount">{fmt(m.transferOut)}</td>
-                          <td className="tx-amount">
-                            {fmt(m.monthEndBalance)}
-                          </td>
+                          <td className="tx-amount">{fmt(m.monthEndBalance)}</td>
                         </tr>
-                      </thead>
-                      <tbody>
-                        {monthly.map((m) => (
-                          <tr key={m.ym}>
-                            <td className="tx-nowrap">{m.ym}</td>
-                            <td className="tx-amount">{m.income.toFixed(2)}</td>
-                            <td className="tx-amount">{m.expense.toFixed(2)}</td>
-                            <td className="tx-amount">{m.transferIn.toFixed(2)}</td>
-                            <td className="tx-amount">{m.transferOut.toFixed(2)}</td>
-                            <td className="tx-amount">{Number(m.monthEndBalance || 0).toFixed(2)}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                      ))}
+                    </tbody>
+                  </table>
 
                   <p style={{ marginTop: 10, color: 'var(--text-muted)', fontSize: 12 }}>
                     End Balance uses (date, createdAt) ordering for same-day transactions.
@@ -410,6 +397,10 @@ const AccountDetailPage = () => {
                               t.accountId ||
                               '';
                           }
+                        } else {
+                          direction = t.type === 'income' ? 'In' : 'Out';
+                          other = '';
+                        }
 
                         return (
                           <tr key={t.id}>
@@ -436,7 +427,7 @@ const AccountDetailPage = () => {
                 </div>
               )}
             </div>
-          </>
+          </React.Fragment>
         )}
       </div>
       <MobileTabBar />
