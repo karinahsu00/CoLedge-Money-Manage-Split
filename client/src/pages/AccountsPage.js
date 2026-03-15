@@ -245,7 +245,7 @@ const AccountsPage = () => {
           ) : sortedAccounts.length === 0 ? (
             <p>No accounts yet.</p>
           ) : (
-            <>
+            <React.Fragment>
               {/* Desktop table */}
               <div className="accounts-table-wrap">
                 <table className="tx-table">
@@ -258,7 +258,6 @@ const AccountsPage = () => {
                       <th>Actions</th>
                     </tr>
                   </thead>
-
                   <tbody>
                     {sortedAccounts.map((a) => {
                       const isEditing = editingId === a.id;
@@ -283,13 +282,12 @@ const AccountsPage = () => {
                                 onChange={(e) => setEditForm((p) => ({ ...p, name: e.target.value }))}
                               />
                             ) : (
-                              <>
+                              <div style={{ display: 'inline-block' }}>
                                 {a.name}
-                                {isArchived ? <span className="archived-pill">Archived</span> : null}
-                              </>
+                                {isArchived ? <span className="archived-pill" style={{ marginLeft: 8 }}>Archived</span> : null}
+                              </div>
                             )}
                           </td>
-
                           <td className="tx-nowrap">
                             {isEditing ? (
                               <select
@@ -305,7 +303,6 @@ const AccountsPage = () => {
                               accountTypeLabel(a.type)
                             )}
                           </td>
-
                           <td className="tx-nowrap">
                             {isEditing ? (
                               <input
@@ -317,9 +314,7 @@ const AccountsPage = () => {
                               a.currency || ''
                             )}
                           </td>
-
                           <td className="tx-amount">{Number(a.balance || 0).toFixed(2)}</td>
-
                           <td onClick={(e) => e.stopPropagation()}>
                             {isEditing ? (
                               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -342,7 +337,6 @@ const AccountsPage = () => {
                     })}
                   </tbody>
                 </table>
-
                 <p style={{ marginTop: 10, color: '#666', fontSize: 12 }}>
                   Click an account row to view details. Hidden (archived) accounts appear at the bottom.
                 </p>
@@ -375,7 +369,6 @@ const AccountsPage = () => {
                             {accountTypeLabel(a.type)} · {a.currency || ''}
                           </div>
                         </div>
-
                         <div className="account-card-mobile__balance">
                           {Number(a.balance || 0).toFixed(2)}
                         </div>
@@ -386,51 +379,38 @@ const AccountsPage = () => {
                         onClick={(e) => e.stopPropagation()}
                       >
                         {isEditing ? (
-                          <>
+                          <div className="account-card-mobile__edit-form">
                             <input
                               className="form-input"
                               value={editForm.name}
                               onChange={(e) => setEditForm((p) => ({ ...p, name: e.target.value }))}
                               placeholder="Account name"
+                              style={{ marginBottom: 10 }}
                             />
-
                             <select
                               className="form-input"
                               value={editForm.type}
                               onChange={(e) => setEditForm((p) => ({ ...p, type: e.target.value }))}
+                              style={{ marginBottom: 10 }}
                             >
                               {ACCOUNT_TYPES.map((t) => (
                                 <option key={t.value} value={t.value}>{t.label}</option>
                               ))}
                             </select>
-
                             <input
                               className="form-input"
                               value={editForm.currency}
                               onChange={(e) => setEditForm((p) => ({ ...p, currency: e.target.value }))}
                               placeholder="USD"
+                              style={{ marginBottom: 15 }}
                             />
-                          ) : (
-                            a.currency || ''
-                          )}
-                        </td>
-
-                        <td className="tx-amount">{Number(a.balance || 0).toFixed(2)} {a.currency || 'USD'}</td>
-
-                        <td onClick={(e) => e.stopPropagation()}>
-                          {isEditing ? (
-                            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                              <button
-                                className="add-btn"
-                                type="button"
-                                disabled={submitting}
-                                onClick={saveEdit}
-                              >
+                            <div className="account-card-mobile__btnrow">
+                              <button className="add-btn" type="button" disabled={submitting} onClick={saveEdit}>
                                 {submitting ? 'Saving...' : 'Save'}
                               </button>
                               <button className="cancel-btn" type="button" onClick={cancelEdit}>Cancel</button>
                             </div>
-                          </>
+                          </div>
                         ) : (
                           <div className="account-card-mobile__btnrow">
                             <button className="add-btn" type="button" onClick={() => startEdit(a)}>Edit</button>
@@ -444,7 +424,7 @@ const AccountsPage = () => {
                   );
                 })}
               </div>
-            </>
+            </React.Fragment>
           )}
         </div>
       </div>
