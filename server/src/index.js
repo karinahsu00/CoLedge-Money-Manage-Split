@@ -1,8 +1,8 @@
 require('dotenv').config();
-const express = require('express'); // 補上這個
-const cors = require('cors');       // 補上這個
+const express = require('express');
+const cors = require('cors');
 
-// 請確保這些路徑與你的檔案結構一致，如果沒有這些檔案會報錯
+// 1. 確保這裡只引入存在的檔案
 const authRoutes = require('./routes/auth'); 
 const accountsRoutes = require('./routes/accounts');
 const transactionsRoutes = require('./routes/transactions');
@@ -10,8 +10,9 @@ const groupsRoutes = require('./routes/groups');
 const splitsRoutes = require('./routes/splits');
 const ledgersRoutes = require('./routes/ledgers');
 const fxRoutes = require('./routes/fx');
-const { authMiddleware } = require('./middleware/auth'); // 假設你在這
-const { apiLimiter } = require('./middleware/limiter');   // 假設你在這
+
+// 這裡保留 auth.js，因為截圖顯示它存在
+const authMiddleware = require('./middleware/auth');
 
 const app = express();
 
@@ -49,10 +50,10 @@ app.get('/', (req, res) => {
   res.send('Welcome to CoLedge API!');
 });
 
-// Public routes
 app.use('/api/auth', authRoutes);
 
-app.get('/api/me', apiLimiter, authMiddleware, (req, res) => {
+// 2. 這裡原本有 apiLimiter，我幫你拿掉了
+app.get('/api/me', authMiddleware, (req, res) => {
   const u = req.user || {};
   res.json({
     uid: u.uid || u.user_id || u.sub || null,
