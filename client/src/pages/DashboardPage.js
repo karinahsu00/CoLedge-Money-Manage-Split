@@ -741,37 +741,10 @@ const DashboardPage = () => {
                           const accountLabel =
                             t.type === 'transfer' && toName ? `${fromName} → ${toName}` : fromName;
 
-                          const isTransfer = t.type === 'transfer';
-
-                          let amountNode = null;
-
-                          if (isTransfer) {
-                            const { fromAmount, fromCurrency: fc, toAmount, toCurrency: tc } = getTransferAmountLines(t, fromAccCurrency);
-                            amountNode = (
-                              <div className="tx-amount-cell">
-                                <div className="tx-amount-local amount-out">
-                                  {fc} {fmt2(fromAmount)}
-                                </div>
-                                {toAmount != null && tc ? (
-                                  <div className="tx-amount-usd">
-                                    {tc} {fmt2(toAmount)}
-                                  </div>
-                                ) : null}
-                              </div>
-                            );
-                          } else {
-                            const { localAmount, localCurrency, usdAmount, isOut } = getNonTransferDisplay(t, fromAccCurrency);
-                            amountNode = (
-                              <div className="tx-amount-cell">
-                                <div className={`tx-amount-local ${isOut ? 'amount-out' : 'amount-in'}`}>
-                                  {localCurrency} {fmt2(localAmount)}
-                                </div>
-                                {usdAmount != null && localCurrency !== 'USD' ? (
-                                  <div className="tx-amount-usd">USD {fmt2(usdAmount)}</div>
-                                ) : null}
-                              </div>
-                            );
-                          }
+                          const amount = Number(t.amount) || 0;
+                          const localCurrency = t.currency || t.fromCurrency || 'USD';
+                          const usdAmt = t.usdAmount != null ? Number(t.usdAmount) : null;
+                          const showUSD = usdAmt != null && localCurrency !== 'USD';
 
                           return (
                             <tr key={t.id}>
@@ -779,11 +752,20 @@ const DashboardPage = () => {
                               <td className="tx-nowrap">{t.type}</td>
                               <td>{t.category}</td>
                               <td>{accountLabel}</td>
-                              <td>{t.note || t.description || ''}</td>
-                              <td className="tx-amount">{amountNode}</td>
-                              <td className="tx-actions">
-                                <button className="edit-btn" onClick={() => openEdit(t)}>Edit</button>
-                                <button className="delete-btn" onClick={() => handleDeleteTransaction(t.id)}>Delete</button>
+                              <td>{t.note || ''}</td>
+                              <td>
+                                <div className="tx-amount-cell">
+                                  <span className="tx-amount-local">{amount.toFixed(2)} {localCurrency}</span>
+                                  {showUSD && <span className="tx-amount-usd">{usdAmt.toFixed(2)} USD</span>}
+                                </div>
+                              </td>
+                              <td>
+                                <button
+                                  className="delete-btn"
+                                  onClick={() => handleDeleteTransaction(t.id)}
+                                >
+                                  Delete
+                                </button>
                               </td>
                             </tr>
                           );
@@ -806,37 +788,10 @@ const DashboardPage = () => {
                       const accountLabel =
                         t.type === 'transfer' && toName ? `${fromName} → ${toName}` : fromName;
 
-                      const isTransfer = t.type === 'transfer';
-
-                      let amountNode = null;
-
-                      if (isTransfer) {
-                        const { fromAmount, fromCurrency: fc, toAmount, toCurrency: tc } = getTransferAmountLines(t, fromAccCurrency);
-                        amountNode = (
-                          <>
-                            <div className="tx-card-amount-local amount-out">
-                              {fc} {fmt2(fromAmount)}
-                            </div>
-                            {toAmount != null && tc ? (
-                              <div className="tx-card-amount-usd">
-                                {tc} {fmt2(toAmount)}
-                              </div>
-                            ) : null}
-                          </>
-                        );
-                      } else {
-                        const { localAmount, localCurrency, usdAmount, isOut } = getNonTransferDisplay(t, fromAccCurrency);
-                        amountNode = (
-                          <>
-                            <div className={`tx-card-amount-local ${isOut ? 'amount-out' : 'amount-in'}`}>
-                              {localCurrency} {fmt2(localAmount)}
-                            </div>
-                            {usdAmount != null && localCurrency !== 'USD' ? (
-                              <div className="tx-card-amount-usd">USD {fmt2(usdAmount)}</div>
-                            ) : null}
-                          </>
-                        );
-                      }
+                      const amount = Number(t.amount) || 0;
+                      const mobileLocalCurrency = t.currency || t.fromCurrency || 'USD';
+                      const mobileUsdAmt = t.usdAmount != null ? Number(t.usdAmount) : null;
+                      const mobileShowUSD = mobileUsdAmt != null && mobileLocalCurrency !== 'USD';
 
                       return (
                         <div key={t.id} className="tx-card">
@@ -847,9 +802,9 @@ const DashboardPage = () => {
                                 {t.type} • {accountLabel}
                               </span>
                             </div>
-
                             <div className="tx-card-amount">
-                              {amountNode}
+                              <div>{amount.toFixed(2)} {mobileLocalCurrency}</div>
+                              {mobileShowUSD && <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{mobileUsdAmt.toFixed(2)} USD</div>}
                             </div>
                           </div>
 
