@@ -19,7 +19,8 @@ const LedgerPage = () => {
     const fetchLedgers = async () => {
         try {
             const token = localStorage.getItem('authToken');
-            const response = await fetch('http://localhost:5002/api/ledgers', {
+            const API_BASE_URL = process.env.REACT_APP_API_URL || process.env.REACT_APP_API_BASE_URL || '/api';
+            const response = await fetch(`${API_BASE_URL}/ledgers`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -46,7 +47,8 @@ const LedgerPage = () => {
 
         try {
             const token = localStorage.getItem('authToken');
-            const response = await fetch('http://localhost:5002/api/ledgers', {
+            const API_BASE_URL = process.env.REACT_APP_API_URL || process.env.REACT_APP_API_BASE_URL || '/api';
+            const response = await fetch(`${API_BASE_URL}/ledgers`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
