@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { accountsAPI, transactionsAPI } from '../config/api';
 import { accountTypeLabel } from '../constants/accountTypes';
 import './Dashboard.css';
+import MobileTabBar from '../components/MobileTabBar';
 
 const ym = (dateStr) => {
   if (!dateStr || typeof dateStr !== 'string') return 'Unknown';
@@ -508,6 +509,7 @@ const AccountDetailPage = () => {
           </>
         )}
       </div>
+      <MobileTabBar />
     </div>
   );
 };

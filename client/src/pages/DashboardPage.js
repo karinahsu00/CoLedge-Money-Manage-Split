@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { accountsAPI, transactionsAPI } from '../config/api';
 import '../pages/Dashboard.css';
+import MobileTabBar from '../components/MobileTabBar';
 
 const DashboardPage = () => {
   const { currentUser, logout } = useAuth();
@@ -536,6 +537,7 @@ const DashboardPage = () => {
           </>
         )}
       </div>
+      <MobileTabBar />
     </div>
   );
 };

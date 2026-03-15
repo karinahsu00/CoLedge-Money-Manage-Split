@@ -1,0 +1,75 @@
+/* ── Mobile Bottom Tab Bar ──────────────────────────────────── */
+.mobile-tab-bar {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .mobile-tab-bar {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    background: var(--color-nav-bg, #283618);
+    border-top: 1px solid rgba(163, 177, 138, 0.25);
+    box-shadow: 0 -2px 12px rgba(40, 54, 24, 0.18);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .mobile-tab-bar__item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    padding: 10px 4px 8px;
+    min-height: 56px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    position: relative;
+    color: rgba(218, 215, 205, 0.6);
+    text-decoration: none;
+    transition: color 0.18s;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .mobile-tab-bar__item:active {
+    background: rgba(163, 177, 138, 0.12);
+  }
+
+  .mobile-tab-bar__item.active {
+    color: #A3B18A;
+  }
+
+  /* Active indicator bar at top of tab */
+  .mobile-tab-bar__item.active::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 20%;
+    right: 20%;
+    height: 3px;
+    border-radius: 0 0 3px 3px;
+    background: var(--color-secondary-light, #A3B18A);
+  }
+
+  .mobile-tab-bar__icon {
+    font-size: 20px;
+    line-height: 1;
+  }
+
+  .mobile-tab-bar__label {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    line-height: 1;
+  }
+
+  /* Ensure page content doesn't hide behind the tab bar */
+  .dashboard-content {
+    padding-bottom: calc(70px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+}
