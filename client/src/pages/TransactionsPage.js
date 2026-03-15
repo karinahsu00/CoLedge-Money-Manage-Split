@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Navbar from '../components/Navbar';
 import { transactionsAPI, accountsAPI } from '../config/api';
 import './Dashboard.css';
+import MobileTabBar from '../components/MobileTabBar';
 
 const DEFAULT_CATEGORIES = {
     expense: ['Food', 'Transportation', 'Shopping', 'Utilities', 'Entertainment', 'Other'],
@@ -428,6 +429,7 @@ const TransactionsPage = () => {
                     </div>
                 </div>
             )}
+            <MobileTabBar />
         </>
     );
 };

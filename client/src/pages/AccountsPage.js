@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { accountsAPI } from '../config/api';
 import { ACCOUNT_TYPES, accountTypeLabel } from '../constants/accountTypes';
 import './Dashboard.css';
+import MobileTabBar from '../components/MobileTabBar';
 
 const AccountsPage = () => {
   const navigate = useNavigate();
@@ -388,6 +389,7 @@ const AccountsPage = () => {
           )}
         </div>
       </div>
+      <MobileTabBar />
     </div>
   );
 };

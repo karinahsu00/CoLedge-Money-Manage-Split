@@ -10,6 +10,7 @@ import SplitPage from './pages/SplitPage';
 import AccountsPage from './pages/AccountsPage';
 import AccountDetailPage from './pages/AccountDetailPage';
 import AnalyticsPage from './pages/AnalyticsPage';
+import MorePage from './pages/MorePage';
 
 function App() {
   return (
@@ -69,6 +70,15 @@ function App() {
             element={
               <ProtectedRoute>
                 <AnalyticsPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/more"
+            element={
+              <ProtectedRoute>
+                <MorePage />
               </ProtectedRoute>
             }
           />

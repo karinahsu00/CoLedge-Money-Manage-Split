@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { transactionsAPI, accountsAPI } from '../config/api';
 import '../pages/Dashboard.css';
+import MobileTabBar from '../components/MobileTabBar';
 
 // ── Pie chart colours — warm soft academia palette ───────────────────────────
 const COLORS = [
@@ -84,34 +85,57 @@ const PieChart = ({ data }) => {
 const BreakdownTable = ({ data, label }) => {
     const total = data.reduce((s, d) => s + d.value, 0);
     return (
-        <table className="analytics-table">
-            <thead>
-                <tr>
-                    <th>#</th>
-                    <th>{label}</th>
-                    <th>Amount</th>
-                    <th>Share</th>
-                </tr>
-            </thead>
-            <tbody>
-                {data.length === 0 ? (
+        <>
+            {/* Desktop table */}
+            <table className="analytics-table analytics-table-desktop">
+                <thead>
                     <tr>
-                        <td colSpan="4" style={{ textAlign: 'center', padding: '20px' }}>
-                            No data for the selected period
-                        </td>
+                        <th>#</th>
+                        <th>{label}</th>
+                        <th>Amount</th>
+                        <th>Share</th>
                     </tr>
+                </thead>
+                <tbody>
+                    {data.length === 0 ? (
+                        <tr>
+                            <td colSpan="4" style={{ textAlign: 'center', padding: '20px' }}>
+                                No data for the selected period
+                            </td>
+                        </tr>
+                    ) : (
+                        data.map((d, i) => (
+                            <tr key={i}>
+                                <td>{i + 1}</td>
+                                <td>{d.label || '(unknown)'}</td>
+                                <td>${d.value.toFixed(2)}</td>
+                                <td>{total > 0 ? ((d.value / total) * 100).toFixed(1) : 0}%</td>
+                            </tr>
+                        ))
+                    )}
+                </tbody>
+            </table>
+
+            {/* Mobile cards */}
+            <div className="analytics-cards">
+                {data.length === 0 ? (
+                    <p className="analytics-empty">No data for the selected period</p>
                 ) : (
                     data.map((d, i) => (
-                        <tr key={i}>
-                            <td>{i + 1}</td>
-                            <td>{d.label || '(unknown)'}</td>
-                            <td>${d.value.toFixed(2)}</td>
-                            <td>{total > 0 ? ((d.value / total) * 100).toFixed(1) : 0}%</td>
-                        </tr>
+                        <div key={i} className="analytics-card">
+                            <div className="analytics-card__rank">#{i + 1}</div>
+                            <div className="analytics-card__body">
+                                <div className="analytics-card__label">{d.label || '(unknown)'}</div>
+                                <div className="analytics-card__amount">${d.value.toFixed(2)}</div>
+                            </div>
+                            <div className="analytics-card__share">
+                                {total > 0 ? ((d.value / total) * 100).toFixed(1) : 0}%
+                            </div>
+                        </div>
                     ))
                 )}
-            </tbody>
-        </table>
+            </div>
+        </>
     );
 };
 
@@ -400,6 +424,7 @@ const AnalyticsPage = () => {
                     </>
                 )}
             </div>
+            <MobileTabBar />
         </div>
     );
 };
