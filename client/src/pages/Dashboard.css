@@ -1051,7 +1051,6 @@ tr:hover {
   }
 }
 
-<<<<<<< HEAD
 /* ── Split Page — Mobile Cards ────────────────────────────── */
 .split-table-wrap {
   overflow-x: auto;
@@ -1191,7 +1190,7 @@ tr:hover {
 
   /* analytics-section: stack pie + cards vertically */
   .analytics-section {
-=======
+
 /* ── Edit Transaction Modal ───────────────────────────────── */
 .modal-overlay {
   position: fixed;
@@ -1268,7 +1267,7 @@ tr:hover {
 /* Make buttons in modal not stick together on small screens */
 @media (max-width: 420px) {
   .modal-actions {
->>>>>>> 49b59f9 (Fix mobile UI and accounts rendering)
+ 49b59f9 (Fix mobile UI and accounts rendering)
     flex-direction: column;
     align-items: stretch;
   }
@@ -1508,9 +1507,7 @@ tr:hover {
   }
 }
 
-/* ============================================================
-   Mobile (D3: 360–430px) adjustments
-   ============================================================ */
+
 @media (max-width: 767px) {
   /* 1) Keep ONLY bottom tab bar on mobile */
   .navbar {
@@ -1577,9 +1574,7 @@ tr:hover {
   }
 }
 
-/* ============================================================
-   Mobile cards for Accounts + AccountDetail (no horizontal swipe)
-   ============================================================ */
+
 @media (max-width: 767px) {
   /* Accounts: show cards, hide accounts table */
   .accounts-page .accounts-table-wrap {

@@ -3,18 +3,6 @@ require('dotenv').config();
 const app = express();
 
 // CORS allowlist (production-friendly)
-const parseOrigins = (v) =>
-  (v || '')
-    .split(',')
-    .map((s) => s.trim())
-    .filter(Boolean);
-
-const corsOrigins =
-  parseOrigins(process.env.CORS_ORIGINS) ||
-  (process.env.CORS_ORIGIN ? [process.env.CORS_ORIGIN] : []);
-
-<<<<<<< HEAD
-// Build CORS allowlist from environment variables.
 // Accepts a comma-separated list via CORS_ORIGINS or a single origin via CORS_ORIGIN.
 // In development (NODE_ENV !== 'production') http://localhost:3000 is always allowed.
 const parseOrigins = (v) =>
@@ -28,20 +16,13 @@ const allowedOrigins = [
   ...(process.env.CORS_ORIGIN ? [process.env.CORS_ORIGIN.trim()] : []),
 ];
 
-if (process.env.NODE_ENV !== 'production') {
-  allowedOrigins.push('http://localhost:3000');
-=======
 const isDev = process.env.NODE_ENV !== 'production';
-
-// Always allow localhost for dev
 if (isDev) {
-  corsOrigins.push('http://localhost:3000');
->>>>>>> 49b59f9 (Fix mobile UI and accounts rendering)
+  allowedOrigins.push('http://localhost:3000');
 }
 
 const corsOptions = {
   origin: (origin, callback) => {
-<<<<<<< HEAD
     // Allow requests with no Origin header (same-origin, curl, server-to-server)
     if (!origin) return callback(null, true);
     // If no allowlist is configured, keep the open behaviour so local dev works out of the box
@@ -54,7 +35,8 @@ const corsOptions = {
       )
     );
   },
-=======
+};
+
     // Allow same-origin / server-to-server / curl (no Origin header)
     if (!origin) return callback(null, true);
 
@@ -64,9 +46,6 @@ const corsOptions = {
     if (corsOrigins.includes(origin)) return callback(null, true);
 
     return callback(new Error(`CORS blocked for origin: ${origin}`));
-  }
->>>>>>> 49b59f9 (Fix mobile UI and accounts rendering)
-};
 
 app.use(cors(corsOptions));
 app.use(express.json());
