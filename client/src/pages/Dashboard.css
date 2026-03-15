@@ -1273,11 +1273,235 @@ tr:hover {
     align-items: stretch;
   }
 
-<<<<<<< HEAD
+/* ── Split Page — Mobile Cards ────────────────────────────── */
+.split-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.split-cards {
+  display: none;
+}
+
+.split-card {
+  border: 1px solid var(--color-border-light, #E3D5CA);
+  border-radius: var(--radius-md, 10px);
+  padding: 14px;
+  margin-top: 10px;
+  background: var(--color-surface, #fff);
+}
+
+.split-card--editing {
+  background: #f0f4ff;
+  border-color: #a8c7fa;
+}
+
+.split-card__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.split-card__info {
+  flex: 1;
+  min-width: 0;
+}
+
+.split-card__desc {
+  font-weight: 600;
+  color: var(--color-text, #283618);
+  font-size: 15px;
+}
+
+.split-card__meta {
+  font-size: 12px;
+  color: var(--color-text-muted, #656D4A);
+  margin-top: 2px;
+}
+
+.split-card__amount {
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--color-danger, #BF4342);
+  white-space: nowrap;
+}
+
+.split-card__detail {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 13px;
+  color: var(--color-text-muted, #656D4A);
+  margin-bottom: 10px;
+}
+
+.split-card__actions {
+  display: flex;
+  gap: 8px;
+}
+
+@media (max-width: 767px) {
+  .split-table-wrap {
+    display: none;
+  }
+  .split-cards {
+    display: block;
+  }
+}
+
+/* ── Analytics Page — Mobile Cards ───────────────────────── */
+.analytics-table-desktop {
+  /* shown on desktop, hidden on mobile */
+}
+
+.analytics-cards {
+  display: none;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.analytics-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: var(--color-surface, #fff);
+  border: 1px solid var(--color-border-light, #E3D5CA);
+  border-radius: var(--radius-md, 10px);
+}
+
+.analytics-card__rank {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-text-muted, #656D4A);
+  min-width: 24px;
+}
+
+.analytics-card__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.analytics-card__label {
+  font-weight: 500;
+  color: var(--color-text, #283618);
+  font-size: 14px;
+}
+
+.analytics-card__amount {
+  font-weight: 700;
+  color: var(--color-danger, #BF4342);
+  font-size: 15px;
+}
+
+.analytics-card__share {
+  font-size: 13px;
+  color: var(--color-text-muted, #656D4A);
+  white-space: nowrap;
+}
+
+@media (max-width: 767px) {
+  .analytics-table-desktop {
+    display: none;
+  }
+  .analytics-cards {
+    display: flex;
+  }
+
+  /* analytics-section: stack pie + cards vertically */
+  .analytics-section {
+    flex-direction: column;
+    gap: 16px;
+  }
+
   .pie-chart-wrap {
     align-self: center;
     min-width: unset;
-=======
+  }
+}
+
+/* ── Edit Transaction Modal ───────────────────────────────── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(40, 54, 24, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  z-index: 9999;
+}
+
+.modal {
+  width: min(900px, 100%);
+  background: var(--color-surface, #fff);
+  border-radius: var(--radius-md, 10px);
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--color-border-light, #E3D5CA);
+  padding: 18px 18px 14px;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.modal-header h3 {
+  margin: 0;
+  color: var(--color-text, #283618);
+  font-size: 18px;
+}
+
+.modal-close {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+  padding: 6px 8px;
+  border-radius: 8px;
+  color: var(--color-text, #283618);
+}
+
+.modal-close:hover {
+  background: rgba(163, 177, 138, 0.25);
+}
+
+.modal-form {
+  margin-top: 8px;
+}
+
+.modal-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 14px;
+}
+
+@media (max-width: 720px) {
+  .modal-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+/* Make buttons in modal not stick together on small screens */
+@media (max-width: 420px) {
+  .modal-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
   .modal-actions .add-btn,
   .modal-actions .cancel-btn {
     width: 100%;
@@ -1333,17 +1557,10 @@ tr:hover {
   .cancel-btn {
     width: 100%;
     align-self: stretch;
->>>>>>> 49b59f9 (Fix mobile UI and accounts rendering)
   }
 }
 
 @media (max-width: 767px) {
-<<<<<<< HEAD
-  .groups-container {
-    grid-template-columns: 1fr !important;
-  }
-}
-=======
   .accounts-grid {
     grid-template-columns: 1fr !important;
   }
@@ -1491,81 +1708,3 @@ tr:hover {
     display: block !important;
   }
 }
-
-/* ============================================================
-   Mobile: prefer cards (no horizontal table swipe)
-   ============================================================ */
-@media (max-width: 767px) {
-  /* Record page: cards only */
-  .record-page .tx-table-wrap {
-    display: none !important;
-  }
-  .record-page .tx-cards {
-    display: block !important;
-  }
-
-  /* Account detail: Monthly Summary + Transactions cards only */
-  .account-detail-page .monthly-table {
-    display: none !important;
-  }
-  .account-detail-page .monthly-cards {
-    display: block !important;
-  }
-
-  .account-detail-page .account-tx-table {
-    display: none !important;
-  }
-  .account-detail-page .account-tx-cards {
-    display: block !important;
-  }
-
-  /* Monthly cards styling */
-  .monthly-cards {
-    display: none;
-  }
-
-  .monthly-card {
-    border: 1px solid var(--color-border-light, #E3D5CA);
-    border-radius: var(--radius-md, 10px);
-    background: var(--color-surface, #fff);
-    padding: 12px 14px;
-    margin-top: 10px;
-  }
-
-  .monthly-card__top {
-    display: flex;
-    justify-content: space-between;
-    gap: 10px;
-    align-items: baseline;
-    flex-wrap: wrap;
-  }
-
-  .monthly-card__end {
-    font-size: 12px;
-    color: var(--color-text-muted, #656D4A);
-    font-weight: 700;
-  }
-
-  .monthly-card__grid {
-    margin-top: 10px;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px 12px;
-  }
-
-  .monthly-card__label {
-    font-size: 11px;
-    color: var(--color-text-muted, #656D4A);
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-  }
-
-  .monthly-card__value {
-    margin-top: 3px;
-    font-weight: 900;
-    font-variant-numeric: tabular-nums;
-    color: var(--color-text, #283618);
-  }
-}
->>>>>>> 49b59f9 (Fix mobile UI and accounts rendering)
