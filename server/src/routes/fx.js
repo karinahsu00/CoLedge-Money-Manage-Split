@@ -19,6 +19,16 @@ const setCached = (from, to, rate) => {
   cache.set(key, { rate, expiresAt: Date.now() + TTL_MS });
 };
 
+// Fallback static rates if APIs fail
+const STATIC_RATES = {
+  'USD->TWD': 32.2,
+  'TWD->USD': 1 / 32.2,
+  'EUR->TWD': 35.0,
+  'TWD->EUR': 1 / 35.0,
+  'JPY->TWD': 0.21,
+  'TWD->JPY': 1 / 0.21,
+};
+
 // Provider 1: open.er-api.com (free, no key; broad currency coverage)
 const fetchRateErApi = async (from, to) => {
   const url = `https://open.er-api.com/v6/latest/${encodeURIComponent(from)}`;
@@ -86,7 +96,14 @@ router.get('/rate', async (req, res) => {
         setCached(from, to, rate);
         return res.json({ from, to, rate, source: 'frankfurter' });
       } catch (e2) {
-        // Both failed: return 502 with both errors
+        // Try static fallback
+        const staticKey = `${from}->${to}`;
+        const staticRate = STATIC_RATES[staticKey];
+        if (staticRate) {
+          return res.json({ from, to, rate: staticRate, source: 'static-fallback' });
+        }
+
+        // Both failed and no fallback: return 502 with both errors
         return res.status(502).json({
           error: 'fx provider error',
           providers: {
