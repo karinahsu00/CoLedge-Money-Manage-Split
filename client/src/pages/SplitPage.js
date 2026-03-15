@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { groupsAPI, splitsAPI } from '../services/api';
+import { groupsAPI, splitsAPI } from '../config/api';
 import '../pages/Dashboard.css';
 import MobileTabBar from '../components/MobileTabBar';
 
@@ -45,7 +45,7 @@ const SplitPage = () => {
             setLoadingGroups(true);
             try {
                 const res = await groupsAPI.getAll();
-                setGroups(res.data || []);
+                setGroups(res || []);
             } catch (err) {
                 console.error('Failed to load groups:', err);
             } finally {
@@ -60,8 +60,8 @@ const SplitPage = () => {
         setLoadingSplits(true);
         setSelectedGroupSplits([]);
         try {
-            const res = await splitsAPI.getByGroup(groupId);
-            setSelectedGroupSplits(res.data || []);
+            const res = await splitsAPI.getByGroupId(groupId);
+            setSelectedGroupSplits(res || []);
         } catch (err) {
             console.error('Failed to load splits:', err);
         } finally {
@@ -96,13 +96,13 @@ const SplitPage = () => {
 
         try {
             const res = await groupsAPI.create({ name: newGroupForm.name, members, shareCode });
-            const newGroup = res.data;
+            const newGroup = res;
             setGroups(prev => [...prev, newGroup]);
             setNewGroupForm({ name: '', members: '' });
             setShowAddGroup(false);
             handleSelectGroup(newGroup.id);
         } catch (err) {
-            alert('Failed to create group: ' + (err.response?.data?.error || err.message));
+            alert('Failed to create group: ' + err.message);
         }
     };
 
@@ -118,7 +118,7 @@ const SplitPage = () => {
                 setEditingExpenseId(null);
             }
         } catch (err) {
-            alert('Failed to delete group: ' + (err.response?.data?.error || err.message));
+            alert('Failed to delete group: ' + err.message);
         }
     };
 
@@ -147,7 +147,7 @@ const SplitPage = () => {
 
         try {
             const res = await splitsAPI.create(payload);
-            setSelectedGroupSplits(prev => [res.data, ...prev]);
+            setSelectedGroupSplits(prev => [res, ...prev]);
             setNewExpenseForm({
                 date: new Date().toISOString().split('T')[0],
                 amount: '',
@@ -157,7 +157,7 @@ const SplitPage = () => {
             });
             setShowAddExpense(false);
         } catch (err) {
-            alert('Failed to add expense: ' + (err.response?.data?.error || err.message));
+            alert('Failed to add expense: ' + err.message);
         }
     };
 
@@ -167,7 +167,7 @@ const SplitPage = () => {
             await splitsAPI.delete(expenseId);
             setSelectedGroupSplits(prev => prev.filter(s => s.id !== expenseId));
         } catch (err) {
-            alert('Failed to delete expense: ' + (err.response?.data?.error || err.message));
+            alert('Failed to delete expense: ' + err.message);
         }
     };
 
@@ -210,11 +210,11 @@ const SplitPage = () => {
 
         try {
             const res = await splitsAPI.update(expenseId, payload);
-            setSelectedGroupSplits(prev => prev.map(s => s.id === expenseId ? res.data : s));
+            setSelectedGroupSplits(prev => prev.map(s => s.id === expenseId ? res : s));
             setEditingExpenseId(null);
             setEditExpenseForm({});
         } catch (err) {
-            alert('Failed to update expense: ' + (err.response?.data?.error || err.message));
+            alert('Failed to update expense: ' + err.message);
         }
     };
 
