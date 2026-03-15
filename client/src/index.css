@@ -1,21 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Lora:wght@400;500;600&family=Poppins:wght@400;500;600;700&display=swap');
-
-:root {
-  /* Colors */
-  --color-soft-green: #ccd5ae;
-  --color-light-yellow-green: #e9edc9;
-  --color-cream: #fefae0;
-  --color-light-peach: #faedcd;
-  --color-gray-beige: #ede0d4;
-  --color-brown: #a68a64;
-  --color-dark-green: #84a98c;
-  --color-gray-green: #cad2c5;
-  
-  /* Fonts */
-  --font-title: 'Playfair Display', serif;
-  --font-body: 'Lora', serif;
-  --font-button: 'Poppins', sans-serif;
-}
+/* index.css — Global base styles using theme variables from styles/theme.css */
 
 * {
   margin: 0;
@@ -29,60 +12,55 @@ html, body, #root {
 }
 
 body {
-  background-color: var(--color-cream);
-  color: var(--color-brown);
+  background-color: var(--bg-page);
+  color: var(--text-primary);
   font-family: var(--font-body);
-  line-height: 1.6;
+  font-size: var(--text-base);
+  line-height: 1.65;
 }
 
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-title);
-  color: var(--color-brown);
-  margin-bottom: 1rem;
+  color: var(--text-primary);
+  margin-bottom: 0.75rem;
+  line-height: 1.25;
 }
 
-h1 {
-  font-size: 2.5rem;
-  font-weight: 700;
-}
-
-h2 {
-  font-size: 2rem;
-  font-weight: 600;
-}
-
-h3 {
-  font-size: 1.5rem;
-  font-weight: 600;
-}
+h1 { font-size: var(--text-4xl); font-weight: 700; }
+h2 { font-size: var(--text-2xl); font-weight: 600; }
+h3 { font-size: var(--text-xl);  font-weight: 600; }
 
 button, input[type="submit"] {
-  font-family: var(--font-button);
+  font-family: var(--font-ui);
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all var(--transition);
 }
 
 input, textarea, select {
   font-family: var(--font-body);
-  border: 1px solid var(--color-gray-green);
-  border-radius: 6px;
+  font-size: var(--text-sm);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
   padding: 10px 12px;
-  background-color: white;
+  background-color: var(--bg-surface);
+  color: var(--text-primary);
+  transition: border-color var(--transition), box-shadow var(--transition);
 }
 
 input:focus, textarea:focus, select:focus {
   outline: none;
-  border-color: var(--color-dark-green);
-  box-shadow: 0 0 0 3px rgba(132, 169, 140, 0.1);
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px rgba(88, 129, 87, 0.15);
 }
 
 a {
-  color: var(--color-dark-green);
+  color: var(--primary);
   text-decoration: none;
-  transition: color 0.3s ease;
+  transition: color var(--transition);
 }
 
 a:hover {
-  color: var(--color-brown);
+  color: var(--primary-dark);
 }
+

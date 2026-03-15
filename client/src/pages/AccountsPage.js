@@ -410,9 +410,22 @@ const AccountsPage = () => {
                               onChange={(e) => setEditForm((p) => ({ ...p, currency: e.target.value }))}
                               placeholder="USD"
                             />
+                          ) : (
+                            a.currency || ''
+                          )}
+                        </td>
 
-                            <div className="account-card-mobile__btnrow">
-                              <button className="add-btn" type="button" disabled={submitting} onClick={saveEdit}>
+                        <td className="tx-amount">{Number(a.balance || 0).toFixed(2)} {a.currency || 'USD'}</td>
+
+                        <td onClick={(e) => e.stopPropagation()}>
+                          {isEditing ? (
+                            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                              <button
+                                className="add-btn"
+                                type="button"
+                                disabled={submitting}
+                                onClick={saveEdit}
+                              >
                                 {submitting ? 'Saving...' : 'Save'}
                               </button>
                               <button className="cancel-btn" type="button" onClick={cancelEdit}>Cancel</button>

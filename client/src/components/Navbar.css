@@ -1,107 +1,108 @@
-/* ── Navbar — dark forest theme, aligned with Navbar.js class names ── */
+/* Navbar.css — uses theme variables from styles/theme.css */
 
 .navbar {
-    background: var(--color-nav-bg, #283618);
-    color: var(--color-nav-text, #EDEDE9);
-    padding: 0 30px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    height: 60px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-    position: sticky;
-    top: 0;
-    z-index: 100;
+  background-color: var(--bg-nav);
+  color: var(--text-on-dark);
+  padding: 0 var(--space-8);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 60px;
+  box-shadow: var(--shadow-md);
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
 
 .navbar-left {
-    display: flex;
-    align-items: center;
-}
-
-.navbar-right {
-    display: flex;
-    align-items: center;
-    gap: 6px;
+  display: flex;
+  align-items: center;
 }
 
 .navbar-brand {
-    font-size: 20px;
-    font-weight: 700;
-    color: #fff;
-    text-decoration: none;
-    letter-spacing: 0.03em;
-    transition: opacity 0.2s;
+  font-family: var(--font-title);
+  font-size: var(--text-xl);
+  font-weight: 700;
+  color: var(--text-on-dark);
+  text-decoration: none;
+  letter-spacing: 0.01em;
+  transition: opacity var(--transition);
 }
 
 .navbar-brand:hover {
-    opacity: 0.85;
-    color: #fff;
+  opacity: 0.85;
+  color: var(--text-on-dark);
+}
+
+.navbar-right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
 }
 
 .navbar-link {
-    color: #EDEDE9;
-    text-decoration: none;
-    font-size: 14px;
-    font-weight: 500;
-    padding: 7px 13px;
-    border-radius: 6px;
-    transition: background 0.2s, color 0.2s;
+  color: var(--text-on-dark);
+  text-decoration: none;
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  opacity: 0.85;
+  transition: background-color var(--transition), opacity var(--transition);
 }
 
 .navbar-link:hover {
-    background-color: rgba(255, 255, 255, 0.15);
-    color: #fff;
-}
-
-.navbar-link.active {
-    background-color: rgba(255, 255, 255, 0.2);
-    color: #fff;
+  background-color: var(--bg-nav-hover);
+  color: var(--text-on-dark);
+  opacity: 1;
 }
 
 .navbar-user {
-    font-size: 13px;
-    color: #EDEDE9;
-    opacity: 0.85;
-    padding: 0 6px;
+  font-family: var(--font-ui);
+  font-size: var(--text-xs);
+  color: var(--text-on-dark);
+  opacity: 0.7;
+  padding: 0 var(--space-2);
 }
 
 .navbar-button {
-    background-color: rgba(163, 177, 138, 0.25);
-    color: #EDEDE9;
-    border: 1px solid rgba(163, 177, 138, 0.4);
-    padding: 7px 14px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 13px;
-    font-weight: 500;
-    transition: background 0.2s, color 0.2s;
+  background-color: transparent;
+  color: var(--text-on-dark);
+  border: 1px solid rgba(233, 237, 201, 0.4);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  opacity: 0.9;
+  transition: all var(--transition);
 }
 
 .navbar-button:hover {
-    background-color: rgba(163, 177, 138, 0.45);
-    color: #fff;
+  background-color: var(--danger);
+  border-color: var(--danger);
+  opacity: 1;
 }
 
 @media (max-width: 768px) {
-    .navbar {
-        height: auto;
-        padding: 12px 16px;
-        flex-wrap: wrap;
-        gap: 8px;
-    }
+  .navbar {
+    padding: var(--space-3) var(--space-4);
+    height: auto;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
 
-    .navbar-right {
-        flex-wrap: wrap;
-        gap: 4px;
-    }
+  .navbar-right {
+    gap: var(--space-1);
+    flex-wrap: wrap;
+  }
 
-    .navbar-link {
-        font-size: 13px;
-        padding: 6px 10px;
-    }
-
-    .navbar-user {
-        font-size: 12px;
-    }
+  .navbar-link,
+  .navbar-button {
+    font-size: var(--text-xs);
+    padding: var(--space-1) var(--space-2);
+  }
 }
+
