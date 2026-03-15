@@ -25,7 +25,41 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use(cors());
+// Build CORS allowlist from environment variables.
+// Accepts a comma-separated list via CORS_ORIGINS or a single origin via CORS_ORIGIN.
+// In development (NODE_ENV !== 'production') http://localhost:3000 is always allowed.
+const parseOrigins = (v) =>
+  (v || '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+const allowedOrigins = [
+  ...parseOrigins(process.env.CORS_ORIGINS),
+  ...(process.env.CORS_ORIGIN ? [process.env.CORS_ORIGIN.trim()] : []),
+];
+
+if (process.env.NODE_ENV !== 'production') {
+  allowedOrigins.push('http://localhost:3000');
+}
+
+const corsOptions = {
+  origin: (origin, callback) => {
+    // Allow requests with no Origin header (same-origin, curl, server-to-server)
+    if (!origin) return callback(null, true);
+    // If no allowlist is configured, keep the open behaviour so local dev works out of the box
+    if (allowedOrigins.length === 0) return callback(null, true);
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    return callback(
+      new Error(
+        `CORS blocked for origin: ${origin}. ` +
+          'Set CORS_ORIGIN or CORS_ORIGINS env var to allow this origin.'
+      )
+    );
+  },
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // Public routes
