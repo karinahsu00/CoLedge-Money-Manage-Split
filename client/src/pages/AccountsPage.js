@@ -32,17 +32,18 @@ const AccountsPage = () => {
   });
 
   const loadAccounts = async () => {
-    try {
-      setError('');
-      setLoading(true);
-      const data = await accountsAPI.getAll();
-      setAccounts(Array.isArray(data) ? data : []);
-    } catch (e) {
-      setError(e?.message || 'Failed to load accounts');
-    } finally {
-      setLoading(false);
-    }
-  };
+  try {
+    setError('');
+    setLoading(true);
+    const res = await accountsAPI.getAll();
+    const list = res?.data ?? res;
+    setAccounts(Array.isArray(list) ? list : []);
+  } catch (e) {
+    setError(e?.message || 'Failed to load accounts');
+  } finally {
+    setLoading(false);
+  }
+};
 
   useEffect(() => {
     loadAccounts();
@@ -51,7 +52,6 @@ const AccountsPage = () => {
 
   const sortedAccounts = useMemo(() => {
     const list = Array.isArray(accounts) ? [...accounts] : [];
-    // archived to bottom, then by createdAt (or name)
     return list.sort((a, b) => {
       const aa = Boolean(a?.archived);
       const bb = Boolean(b?.archived);
@@ -68,10 +68,7 @@ const AccountsPage = () => {
 
   const handleCreateChange = (e) => {
     const { name, value } = e.target;
-    setFormData((p) => ({
-      ...p,
-      [name]: name === 'balance' ? value : value,
-    }));
+    setFormData((p) => ({ ...p, [name]: value }));
   };
 
   const handleCreate = async (e) => {
@@ -91,7 +88,7 @@ const AccountsPage = () => {
         name: formData.name.trim(),
         type: formData.type,
         balance: startingBalance,
-        initialBalance: startingBalance, // ✅ auto store initial balance
+        initialBalance: startingBalance,
         currency: formData.currency || 'USD',
         archived: false,
       });
@@ -163,24 +160,16 @@ const AccountsPage = () => {
   };
 
   return (
-    <div className="dashboard-container">
+    <div className="dashboard-container accounts-page">
       <nav className="navbar">
         <div className="navbar-brand">🏦 CoLedge</div>
         <div className="nav-links">
-          <button className="nav-btn" onClick={() => navigate('/dashboard')}>
-            Record
-          </button>
-          <button className="nav-btn" onClick={() => navigate('/split')}>
-            Split
-          </button>
-          <button className="nav-btn" onClick={() => navigate('/analytics')}>
-            Analytics
-          </button>
+          <button className="nav-btn" onClick={() => navigate('/dashboard')}>Record</button>
+          <button className="nav-btn" onClick={() => navigate('/split')}>Split</button>
+          <button className="nav-btn" onClick={() => navigate('/analytics')}>Analytics</button>
           <button className="nav-btn active">Accounts</button>
           {currentUser && <span className="user-email">{currentUser.email}</span>}
-          <button className="logout-btn" onClick={handleLogout}>
-            Logout
-          </button>
+          <button className="logout-btn" onClick={handleLogout}>Logout</button>
         </div>
       </nav>
 
@@ -208,16 +197,9 @@ const AccountsPage = () => {
 
               <div className="form-group">
                 <label>Type</label>
-                <select
-                  className="form-input"
-                  name="type"
-                  value={formData.type}
-                  onChange={handleCreateChange}
-                >
+                <select className="form-input" name="type" value={formData.type} onChange={handleCreateChange}>
                   {ACCOUNT_TYPES.map((t) => (
-                    <option key={t.value} value={t.value}>
-                      {t.label}
-                    </option>
+                    <option key={t.value} value={t.value}>{t.label}</option>
                   ))}
                 </select>
               </div>
@@ -263,129 +245,193 @@ const AccountsPage = () => {
           ) : sortedAccounts.length === 0 ? (
             <p>No accounts yet.</p>
           ) : (
-            <div className="tx-table-wrap">
-              <table className="tx-table">
-                <thead>
-                  <tr>
-                    <th>Name</th>
-                    <th>Type</th>
-                    <th>Currency</th>
-                    <th style={{ textAlign: 'right' }}>Balance</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
+            <>
+              {/* Desktop table */}
+              <div className="accounts-table-wrap">
+                <table className="tx-table">
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Type</th>
+                      <th>Currency</th>
+                      <th style={{ textAlign: 'right' }}>Balance</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
 
-                <tbody>
-                  {sortedAccounts.map((a) => {
-                    const isEditing = editingId === a.id;
-                    const isArchived = Boolean(a.archived);
+                  <tbody>
+                    {sortedAccounts.map((a) => {
+                      const isEditing = editingId === a.id;
+                      const isArchived = Boolean(a.archived);
 
-                    return (
-                      <tr
-                        key={a.id}
-                        className={isArchived ? 'account-archived-row' : ''}
-                        onClick={(e) => {
-                          // avoid row click when pressing buttons/inputs
-                          const tag = e.target?.tagName?.toLowerCase();
-                          if (['button', 'input', 'select', 'option'].includes(tag)) return;
-                          navigate(`/account/${a.id}`);
-                        }}
-                        style={{ cursor: 'pointer' }}
+                      return (
+                        <tr
+                          key={a.id}
+                          className={isArchived ? 'account-archived-row' : ''}
+                          onClick={(e) => {
+                            const tag = e.target?.tagName?.toLowerCase();
+                            if (['button', 'input', 'select', 'option'].includes(tag)) return;
+                            navigate(`/account/${a.id}`);
+                          }}
+                          style={{ cursor: 'pointer' }}
+                        >
+                          <td>
+                            {isEditing ? (
+                              <input
+                                className="form-input"
+                                value={editForm.name}
+                                onChange={(e) => setEditForm((p) => ({ ...p, name: e.target.value }))}
+                              />
+                            ) : (
+                              <>
+                                {a.name}
+                                {isArchived ? <span className="archived-pill">Archived</span> : null}
+                              </>
+                            )}
+                          </td>
+
+                          <td className="tx-nowrap">
+                            {isEditing ? (
+                              <select
+                                className="form-input"
+                                value={editForm.type}
+                                onChange={(e) => setEditForm((p) => ({ ...p, type: e.target.value }))}
+                              >
+                                {ACCOUNT_TYPES.map((t) => (
+                                  <option key={t.value} value={t.value}>{t.label}</option>
+                                ))}
+                              </select>
+                            ) : (
+                              accountTypeLabel(a.type)
+                            )}
+                          </td>
+
+                          <td className="tx-nowrap">
+                            {isEditing ? (
+                              <input
+                                className="form-input"
+                                value={editForm.currency}
+                                onChange={(e) => setEditForm((p) => ({ ...p, currency: e.target.value }))}
+                              />
+                            ) : (
+                              a.currency || ''
+                            )}
+                          </td>
+
+                          <td className="tx-amount">{Number(a.balance || 0).toFixed(2)}</td>
+
+                          <td onClick={(e) => e.stopPropagation()}>
+                            {isEditing ? (
+                              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                                <button className="add-btn" type="button" disabled={submitting} onClick={saveEdit}>
+                                  {submitting ? 'Saving...' : 'Save'}
+                                </button>
+                                <button className="cancel-btn" type="button" onClick={cancelEdit}>Cancel</button>
+                              </div>
+                            ) : (
+                              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                                <button className="add-btn" type="button" onClick={() => startEdit(a)}>Edit</button>
+                                <button className="add-btn" type="button" disabled={submitting} onClick={() => toggleArchive(a)}>
+                                  {isArchived ? 'Unhide' : 'Hide'}
+                                </button>
+                              </div>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+
+                <p style={{ marginTop: 10, color: '#666', fontSize: 12 }}>
+                  Click an account row to view details. Hidden (archived) accounts appear at the bottom.
+                </p>
+              </div>
+
+              {/* Mobile cards */}
+              <div className="accounts-cards">
+                {sortedAccounts.map((a) => {
+                  const isEditing = editingId === a.id;
+                  const isArchived = Boolean(a.archived);
+
+                  return (
+                    <div
+                      key={a.id}
+                      className={`account-card-mobile ${isArchived ? 'is-archived' : ''}`}
+                      onClick={() => navigate(`/account/${a.id}`)}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') navigate(`/account/${a.id}`);
+                      }}
+                    >
+                      <div className="account-card-mobile__top">
+                        <div>
+                          <div className="account-card-mobile__name">
+                            {isEditing ? 'Editing…' : a.name}
+                            {isArchived ? <span className="archived-pill">Archived</span> : null}
+                          </div>
+                          <div className="account-card-mobile__meta">
+                            {accountTypeLabel(a.type)} · {a.currency || ''}
+                          </div>
+                        </div>
+
+                        <div className="account-card-mobile__balance">
+                          {Number(a.balance || 0).toFixed(2)}
+                        </div>
+                      </div>
+
+                      <div
+                        className="account-card-mobile__actions"
+                        onClick={(e) => e.stopPropagation()}
                       >
-                        <td>
-                          {isEditing ? (
+                        {isEditing ? (
+                          <>
                             <input
                               className="form-input"
                               value={editForm.name}
                               onChange={(e) => setEditForm((p) => ({ ...p, name: e.target.value }))}
+                              placeholder="Account name"
                             />
-                          ) : (
-                            <>
-                              {a.name}
-                              {isArchived ? (
-                                <span className="archived-pill">Archived</span>
-                              ) : null}
-                            </>
-                          )}
-                        </td>
 
-                        <td className="tx-nowrap">
-                          {isEditing ? (
                             <select
                               className="form-input"
                               value={editForm.type}
-                              onChange={(e) =>
-                                setEditForm((p) => ({ ...p, type: e.target.value }))
-                              }
+                              onChange={(e) => setEditForm((p) => ({ ...p, type: e.target.value }))}
                             >
                               {ACCOUNT_TYPES.map((t) => (
-                                <option key={t.value} value={t.value}>
-                                  {t.label}
-                                </option>
+                                <option key={t.value} value={t.value}>{t.label}</option>
                               ))}
                             </select>
-                          ) : (
-                            accountTypeLabel(a.type)
-                          )}
-                        </td>
 
-                        <td className="tx-nowrap">
-                          {isEditing ? (
                             <input
                               className="form-input"
                               value={editForm.currency}
-                              onChange={(e) =>
-                                setEditForm((p) => ({ ...p, currency: e.target.value }))
-                              }
+                              onChange={(e) => setEditForm((p) => ({ ...p, currency: e.target.value }))}
+                              placeholder="USD"
                             />
-                          ) : (
-                            a.currency || ''
-                          )}
-                        </td>
 
-                        <td className="tx-amount">{Number(a.balance || 0).toFixed(2)}</td>
-
-                        <td onClick={(e) => e.stopPropagation()}>
-                          {isEditing ? (
-                            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                              <button
-                                className="add-btn"
-                                type="button"
-                                disabled={submitting}
-                                onClick={saveEdit}
-                              >
+                            <div className="account-card-mobile__btnrow">
+                              <button className="add-btn" type="button" disabled={submitting} onClick={saveEdit}>
                                 {submitting ? 'Saving...' : 'Save'}
                               </button>
-                              <button className="cancel-btn" type="button" onClick={cancelEdit}>
-                                Cancel
-                              </button>
+                              <button className="cancel-btn" type="button" onClick={cancelEdit}>Cancel</button>
                             </div>
-                          ) : (
-                            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                              <button className="add-btn" type="button" onClick={() => startEdit(a)}>
-                                Edit
-                              </button>
-                              <button
-                                className="add-btn"
-                                type="button"
-                                disabled={submitting}
-                                onClick={() => toggleArchive(a)}
-                              >
-                                {isArchived ? 'Unhide' : 'Hide'}
-                              </button>
-                            </div>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-
-              <p style={{ marginTop: 10, color: '#666', fontSize: 12 }}>
-                Click an account row to view details. Hidden (archived) accounts appear at the bottom.
-              </p>
-            </div>
+                          </>
+                        ) : (
+                          <div className="account-card-mobile__btnrow">
+                            <button className="add-btn" type="button" onClick={() => startEdit(a)}>Edit</button>
+                            <button className="add-btn" type="button" disabled={submitting} onClick={() => toggleArchive(a)}>
+                              {isArchived ? 'Unhide' : 'Hide'}
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
           )}
         </div>
       </div>

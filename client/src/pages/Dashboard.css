@@ -974,10 +974,10 @@ tr:hover {
 
 /* ── Responsive switch ────────────────────────────────────── */
 @media (max-width: 767px) {
-  .tx-table-wrap {
+  .record-page .tx-table-wrap {
     display: none;
   }
-  .tx-cards {
+  .record-page .tx-cards {
     display: block;
   }
 }
@@ -1051,6 +1051,7 @@ tr:hover {
   }
 }
 
+<<<<<<< HEAD
 /* ── Split Page — Mobile Cards ────────────────────────────── */
 .split-table-wrap {
   overflow-x: auto;
@@ -1190,18 +1191,381 @@ tr:hover {
 
   /* analytics-section: stack pie + cards vertically */
   .analytics-section {
+=======
+/* ── Edit Transaction Modal ───────────────────────────────── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(40, 54, 24, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  z-index: 9999;
+}
+
+.modal {
+  width: min(900px, 100%);
+  background: var(--color-surface, #fff);
+  border-radius: var(--radius-md, 10px);
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--color-border-light, #E3D5CA);
+  padding: 18px 18px 14px;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.modal-header h3 {
+  margin: 0;
+  color: var(--color-text, #283618);
+  font-size: 18px;
+}
+
+.modal-close {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+  padding: 6px 8px;
+  border-radius: 8px;
+  color: var(--color-text, #283618);
+}
+
+.modal-close:hover {
+  background: rgba(163, 177, 138, 0.25);
+}
+
+.modal-form {
+  margin-top: 8px;
+}
+
+.modal-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 14px;
+}
+
+@media (max-width: 720px) {
+  .modal-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+/* Make buttons in modal not stick together on small screens */
+@media (max-width: 420px) {
+  .modal-actions {
+>>>>>>> 49b59f9 (Fix mobile UI and accounts rendering)
     flex-direction: column;
     align-items: stretch;
   }
 
+<<<<<<< HEAD
   .pie-chart-wrap {
     align-self: center;
     min-width: unset;
+=======
+  .modal-actions .add-btn,
+  .modal-actions .cancel-btn {
+    width: 100%;
+  }
+}
+
+/* ============================================================
+   Mobile (D3: 360–430px) adjustments
+   ============================================================ */
+@media (max-width: 767px) {
+  /* 1) Keep ONLY bottom tab bar on mobile */
+  .navbar {
+    display: none !important;
+  }
+
+  /* reduce side padding for mobile */
+  .dashboard-content {
+    padding: 16px 14px !important;
+  }
+
+  /* 2) Tables: ALWAYS scroll within wrapper on mobile */
+  .tx-table-wrap,
+  .accounts-table-wrap {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+    max-width: 100% !important;
+    display: block !important;
+  }
+
+  .tx-table-wrap .tx-table,
+  .accounts-table-wrap .tx-table {
+    min-width: 720px;
+  }
+
+  /* 3) Make cards/forms fit small screens */
+  .transaction-form-section,
+  .transaction-list,
+  .chart-container,
+  .add-group-form,
+  .group-card,
+  .account-card,
+  .total-balance-card {
+    padding: 16px !important;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Buttons easier to tap */
+  .add-btn,
+  .logout-btn,
+  .cancel-btn {
+    width: 100%;
+    align-self: stretch;
+>>>>>>> 49b59f9 (Fix mobile UI and accounts rendering)
   }
 }
 
 @media (max-width: 767px) {
+<<<<<<< HEAD
   .groups-container {
     grid-template-columns: 1fr !important;
   }
 }
+=======
+  .accounts-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .account-actions,
+  .button-group,
+  .action-buttons {
+    flex-wrap: wrap;
+  }
+
+  .account-card,
+  .add-account-form {
+    width: 100%;
+  }
+}
+
+/* ============================================================
+   Mobile cards for Accounts + AccountDetail (no horizontal swipe)
+   ============================================================ */
+@media (max-width: 767px) {
+  /* Accounts: show cards, hide accounts table */
+  .accounts-page .accounts-table-wrap {
+    display: none !important;
+  }
+  .accounts-page .accounts-cards {
+    display: block;
+  }
+
+  .accounts-cards {
+    display: none;
+  }
+
+  .account-card-mobile {
+    border: 1px solid var(--color-border-light, #E3D5CA);
+    border-radius: var(--radius-md, 10px);
+    background: var(--color-surface, #fff);
+    padding: 12px 14px;
+    margin-top: 10px;
+    box-shadow: var(--shadow-sm, 0 1px 3px rgba(0,0,0,0.06));
+  }
+
+  .account-card-mobile.is-archived {
+    opacity: 0.65;
+  }
+
+  .account-card-mobile__top {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: flex-start;
+  }
+
+  .account-card-mobile__name {
+    font-weight: 800;
+    color: var(--color-text, #283618);
+  }
+
+  .account-card-mobile__meta {
+    margin-top: 4px;
+    font-size: 12px;
+    color: var(--color-text-muted, #656D4A);
+  }
+
+  .account-card-mobile__balance {
+    font-weight: 900;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    color: var(--color-primary, #3A5A40);
+  }
+
+  .account-card-mobile__actions {
+    margin-top: 10px;
+    display: grid;
+    gap: 8px;
+  }
+
+  .account-card-mobile__btnrow {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  /* Account Detail: hide tables, show cards */
+  .account-detail-page .monthly-table {
+    display: none !important;
+  }
+
+  .account-detail-page .monthly-cards {
+    display: block;
+  }
+
+  .monthly-cards {
+    display: none;
+  }
+
+  .monthly-card {
+    border: 1px solid var(--color-border-light, #E3D5CA);
+    border-radius: var(--radius-md, 10px);
+    background: var(--color-surface, #fff);
+    padding: 12px 14px;
+    margin-top: 10px;
+  }
+
+  .monthly-card__top {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    align-items: baseline;
+    flex-wrap: wrap;
+  }
+
+  .monthly-card__end {
+    font-size: 12px;
+    color: var(--color-text-muted, #656D4A);
+    font-weight: 700;
+  }
+
+  .monthly-card__grid {
+    margin-top: 10px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px 12px;
+  }
+
+  .monthly-card__label {
+    font-size: 11px;
+    color: var(--color-text-muted, #656D4A);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .monthly-card__value {
+    margin-top: 3px;
+    font-weight: 900;
+    font-variant-numeric: tabular-nums;
+    color: var(--color-text, #283618);
+  }
+
+  .account-detail-page .account-tx-table {
+    display: none !important;
+  }
+
+  .account-detail-page .account-tx-cards {
+    display: block !important;
+  }
+}
+
+/* ============================================================
+   Mobile: prefer cards (no horizontal table swipe)
+   ============================================================ */
+@media (max-width: 767px) {
+  /* Record page: cards only */
+  .record-page .tx-table-wrap {
+    display: none !important;
+  }
+  .record-page .tx-cards {
+    display: block !important;
+  }
+
+  /* Account detail: Monthly Summary + Transactions cards only */
+  .account-detail-page .monthly-table {
+    display: none !important;
+  }
+  .account-detail-page .monthly-cards {
+    display: block !important;
+  }
+
+  .account-detail-page .account-tx-table {
+    display: none !important;
+  }
+  .account-detail-page .account-tx-cards {
+    display: block !important;
+  }
+
+  /* Monthly cards styling */
+  .monthly-cards {
+    display: none;
+  }
+
+  .monthly-card {
+    border: 1px solid var(--color-border-light, #E3D5CA);
+    border-radius: var(--radius-md, 10px);
+    background: var(--color-surface, #fff);
+    padding: 12px 14px;
+    margin-top: 10px;
+  }
+
+  .monthly-card__top {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    align-items: baseline;
+    flex-wrap: wrap;
+  }
+
+  .monthly-card__end {
+    font-size: 12px;
+    color: var(--color-text-muted, #656D4A);
+    font-weight: 700;
+  }
+
+  .monthly-card__grid {
+    margin-top: 10px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px 12px;
+  }
+
+  .monthly-card__label {
+    font-size: 11px;
+    color: var(--color-text-muted, #656D4A);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .monthly-card__value {
+    margin-top: 3px;
+    font-weight: 900;
+    font-variant-numeric: tabular-nums;
+    color: var(--color-text, #283618);
+  }
+}
+>>>>>>> 49b59f9 (Fix mobile UI and accounts rendering)

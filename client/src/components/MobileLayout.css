@@ -1,0 +1,10 @@
+.mobile-layout {
+  min-height: 100vh;
+}
+
+@media (max-width: 767px) {
+  /* Reserve space for bottom tab bar so content isn't hidden */
+  .mobile-layout__content {
+    padding-bottom: 76px; /* tab bar height approx */
+  }
+}

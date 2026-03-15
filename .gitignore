@@ -104,4 +104,8 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .env.local
-.env.*.local
+.env.*.local.Rhistory
+
+# Local history files
+client/src/components/.Rhistory
+client/src/pages/.Rhistory
