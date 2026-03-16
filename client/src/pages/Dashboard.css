@@ -641,6 +641,12 @@ tr:hover {
   color: var(--danger-dark);
 }
 
+.summary-card.analytics-dark-card {
+  background-color: #2C4C3B; /* Dark Forest Green */
+  border-color: #2C4C3B;
+  color: #FFFFFF; /* Base White text */
+}
+
 .summary-card h3 {
   margin: 0 0 var(--space-2) 0;
   font-size: var(--text-xs);
@@ -653,11 +659,11 @@ tr:hover {
 }
 
 .summary-card.analytics-dark-card h3 {
-    font-size: 17px;
+    font-size: 14px;
     font-weight: 600;
-    opacity: 1;
-    color: #edede9;
-    letter-spacing: 0.01em;
+    opacity: 0.9;
+    color: #F2E8CF; /* Light Cream */
+    letter-spacing: 0.05em;
 }
 
 .summary-card .amount {
@@ -666,6 +672,10 @@ tr:hover {
   margin: 0;
   color: inherit;
   font-family: var(--font-ui);
+}
+
+.summary-card.analytics-dark-card .amount {
+  color: #FFFFFF; /* White */
 }
 
 /* ── Chart container ─────────────────────────────────────── */
@@ -1146,6 +1156,15 @@ tr:hover {
   background-color: var(--primary-faint);
 }
 
+/* ── Desktop Hide Classes (Shown on Mobile only) ───────────── */
+.split-cards-mobile {
+  display: none;
+}
+
+.accounts-cards {
+  display: none;
+}
+
 /* ── Responsive ──────────────────────────────────────────── */
 @media (max-width: 768px) {
   .dashboard-content {
@@ -1153,13 +1172,7 @@ tr:hover {
   }
 
   .navbar {
-    padding: 0 var(--space-4);
-    height: auto;
-    min-height: 56px;
-    flex-wrap: wrap;
-    gap: var(--space-2);
-    padding-top: var(--space-3);
-    padding-bottom: var(--space-3);
+    display: none !important;
   }
 
   .nav-links {
@@ -1214,11 +1227,41 @@ tr:hover {
     display: none;
   }
 
+  .tx-table-wrap.tx-table-wrap-mobile-visible {
+    display: block;
+    overflow-x: auto;
+  }
+
   .tx-cards {
     display: block;
   }
 
   .groups-container {
     grid-template-columns: 1fr;
+  }
+
+  /* Strict Desktop vs Mobile Swaps */
+  .split-table-desktop {
+    display: none;
+  }
+
+  .split-cards-mobile {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .accounts-table-wrap {
+    display: none;
+  }
+
+  .accounts-cards {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .analytics-table-desktop {
+    display: none;
   }
 }

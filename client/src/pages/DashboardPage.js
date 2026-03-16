@@ -754,9 +754,14 @@ const DashboardPage = () => {
                               <td>{accountLabel}</td>
                               <td>{t.note || ''}</td>
                               <td>
-                                <div className="tx-amount-cell">
-                                  <span className="tx-amount-local">{amount.toFixed(2)} {localCurrency}</span>
-                                  {showUSD && <span className="tx-amount-usd">{usdAmt.toFixed(2)} USD</span>}
+                                <div className="tx-amount-cell" style={{ display: 'block', textAlign: 'right' }}>
+                                  <span className="tx-amount-local">
+                                    {showUSD ? (
+                                      `${usdAmt.toFixed(2)} USD ( ${amount.toFixed(2)} ${localCurrency} )`
+                                    ) : (
+                                      `${amount.toFixed(2)} ${localCurrency}`
+                                    )}
+                                  </span>
                                 </div>
                               </td>
                               <td>
@@ -803,8 +808,11 @@ const DashboardPage = () => {
                               </span>
                             </div>
                             <div className="tx-card-amount">
-                              <div>{amount.toFixed(2)} {mobileLocalCurrency}</div>
-                              {mobileShowUSD && <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{mobileUsdAmt.toFixed(2)} USD</div>}
+                              {mobileShowUSD ? (
+                                <div>{mobileUsdAmt.toFixed(2)} USD <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>( {amount.toFixed(2)} {mobileLocalCurrency} )</span></div>
+                              ) : (
+                                <div>{amount.toFixed(2)} {mobileLocalCurrency}</div>
+                              )}
                             </div>
                           </div>
 
