@@ -18,11 +18,10 @@ const AmountDisplay = ({ t, accountById }) => {
   const acc      = accountById.get(t.accountId);
   const accTo    = accountById.get(t.accountToId);
 
-  // Use the pre-calculated usdAmount if available, otherwise derive it
+  // FIX: always recalculate USD live — never trust t.usdAmount (may be stale/wrong)
+  // Formula: displayUSD = t.amount * fxRateToUSD  (1 local unit → N USD)
   const fxRate   = safeNum(t.fxRateToUSD || acc?.fxRateToUSD, 1);
-  const displayUSD = t.usdAmount != null
-    ? safeNum(t.usdAmount)
-    : amount * fxRate;
+  const displayUSD = amount * fxRate;
 
   const localCurrency = t.currency || acc?.currency || 'USD';
 
@@ -156,12 +155,11 @@ const DashboardPage = () => {
 
     try {
       setSubmitting(true);
-      const acc     = accountById.get(formData.accountId);
-      // fxRateToUSD: how many USD equals 1 unit of local currency
-      // e.g. if currency is JPY, fxRateToUSD ≈ 0.0067
-      const fxRate  = safeNum(acc?.fxRateToUSD, 1);
-      const amount  = safeNum(formData.amount);
-      const usdAmount = amount * fxRate;  // CORRECT: 30 JPY * 0.0067 ≈ 0.20 USD
+      const selectedAccount = accountById.get(formData.accountId);
+      // fxRateToUSD: 1 local unit → N USD  (e.g. 1 NTD → 0.031 USD)
+      const rate      = safeNum(selectedAccount?.fxRateToUSD, 1);
+      const amount    = safeNum(formData.amount);
+      const usdAmount = Number(formData.amount) * rate;  // e.g. 587.84 NTD * 0.031 = 18.22 USD
 
       const payload = {
         ...formData,
@@ -169,8 +167,8 @@ const DashboardPage = () => {
         usdAmount:   usdAmount,       // always store the USD-equivalent
         type:        transactionType,
         category:    transactionType === 'transfer' ? 'Internal Transfer' : formData.category,
-        currency:    acc?.currency || 'USD',
-        fxRateToUSD: fxRate,          // snapshot rate at time of recording
+        currency:    selectedAccount?.currency || 'USD',
+        fxRateToUSD: rate,            // snapshot rate at time of recording
         createdAt:   new Date().toISOString(),
       };
 

@@ -74,21 +74,19 @@ const AccountDetailPage = () => {
   // For a transaction row: derive the USD amount and local amount
   const txAmounts = (t) => {
     const isTo = t.accountToId === id && t.type === 'transfer';
-    // local amount relative to THIS account
+
+    // FIX 1: localAmt
+    //   transfer receiving side → use toAmount (amount credited to this account)
+    //   everything else         → use t.amount directly (fromAmount is transfer-only field)
     const localAmt = isTo
       ? safeNum(t.toAmount || t.amount)
-      : safeNum(t.fromAmount || t.amount);
+      : safeNum(t.amount);
 
-    // usd amount: prefer stored usdAmount for the originating side, recalculate for the receiving side
-    let usdAmt;
-    if (isTo) {
-      // receiving side of transfer — use toAmount * this account's fxRate
-      usdAmt = localAmt * fxRate;
-    } else {
-      usdAmt = t.usdAmount != null
-        ? safeNum(t.usdAmount)
-        : safeNum(t.amount) * safeNum(t.fxRateToUSD || fxRate, 1);
-    }
+    // FIX 2 + FIX 3: always recalculate USD = localAmt * fxRate
+    //   Drops t.usdAmount entirely to fix historical records saved with rate=1.
+    //   fxRate = safeNum(account?.fxRateToUSD, 1) already handles missing-rate fallback.
+    //   Formula: 587.84 NTD * 0.031 = 18.22 USD  ✓
+    const usdAmt = localAmt * fxRate;
 
     return { localAmt, usdAmt };
   };
