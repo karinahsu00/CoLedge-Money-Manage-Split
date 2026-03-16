@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { accountsAPI } from '../config/api';
-import { ACCOUNT_TYPES, accountTypeLabel } from '../constants/accountTypes';
+import { accountTypeLabel } from '../constants/accountTypes';
 import './Dashboard.css';
 import MobileTabBar from '../components/MobileTabBar';
 
@@ -27,66 +27,36 @@ const AccountsPage = () => {
   const loadAccounts = async () => {
     setLoading(true);
     const res = await accountsAPI.getAll();
-    setAccounts(res?.data ?? res);
+    setAccounts(Array.isArray(res) ? res : (res?.data || []));
     setLoading(false);
   };
 
   useEffect(() => { loadAccounts(); }, []);
 
-  // 核心數學修正：計算全球資產 USD 總額
-  const totalNetWorthUSD = useMemo(() => {
-    return (accounts || []).reduce((sum, a) => {
-      const bal = Number(a.balance || 0);
-      const rate = Number(a.fxRateToUSD || 1);
-      return sum + (bal * rate);
-    }, 0);
-  }, [accounts]);
+  const totalUSD = useMemo(() => accounts.reduce((sum, a) => sum + (Number(a.balance) * Number(a.fxRateToUSD || 1)), 0), [accounts]);
+
+  if (loading) return <h2>Loading...</h2>;
 
   return (
     <div className="dashboard-container accounts-page">
-      <nav className="navbar">
-        <div className="navbar-brand">🏦 CoLedge</div>
-        <div className="nav-links">
-          <button className="nav-btn" onClick={() => navigate('/dashboard')}>Record</button>
-          <button className="nav-btn" onClick={() => navigate('/split')}>Split</button>
-          <button className="nav-btn" onClick={() => navigate('/analytics')}>Analytics</button>
-          <button className="nav-btn active">Accounts</button>
-          <button className="logout-btn" onClick={() => { logout(); navigate('/login'); }}>Logout</button>
-        </div>
-      </nav>
-
+      <nav className="navbar"><div className="navbar-brand">🏦 CoLedge</div><div className="nav-links"><button className="nav-btn" onClick={() => navigate('/dashboard')}>Record</button><button className="nav-btn active">Accounts</button><button className="logout-btn" onClick={() => { logout(); navigate('/login'); }}>Logout</button></div></nav>
       <div className="dashboard-content">
         <div className="dashboard-header"><h1>🏷️ Accounts</h1></div>
-
-        {/* 恢復 KPI 卡片區塊 */}
+        
+        {/* KPI 卡片 */}
         <div className="transaction-form-section">
             <div className="account-overview-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
-                <div className="account-kpi" style={{ borderLeft: '5px solid #2C4C3B' }}>
-                    <div className="account-kpi-label">Total Net Worth (USD)</div>
-                    <div className="account-kpi-value" style={{ fontSize: '1.8rem', color: '#2C4C3B' }}>{totalNetWorthUSD.toFixed(2)}</div>
-                </div>
-                <div className="account-kpi">
-                    <div className="account-kpi-label">Active Accounts</div>
-                    <div className="account-kpi-value">{accounts.filter(a=>!a.archived).length}</div>
-                </div>
+                <div className="account-kpi" style={{ borderLeft: '5px solid #2C4C3B' }}><div className="account-kpi-label">Total Assets (USD)</div><div className="account-kpi-value">{totalUSD.toFixed(2)}</div></div>
+                <div className="account-kpi"><div className="account-kpi-label">Accounts</div><div className="account-kpi-value">{accounts.length}</div></div>
             </div>
         </div>
 
         <div className="transaction-list">
-          <div className="tx-header"><h2>Your Accounts</h2></div>
-          <div className="accounts-table-wrap">
-            <table className="tx-table">
-              <thead><tr><th>Name</th><th>Type</th><th>Currency</th><th style={{ textAlign: 'right' }}>Balance</th><th>Actions</th></tr></thead>
-              <tbody>
-                {accounts.map(a => (
-                  <tr key={a.id} onClick={() => navigate(`/account/${a.id}`)} style={{ cursor: 'pointer' }}>
-                    <td>{a.name}</td><td>{accountTypeLabel(a.type)}</td><td>{a.currency}</td><td><AccountBalance a={a} /></td>
-                    <td onClick={e => e.stopPropagation()}><button className="edit-btn">Edit</button></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <h2>Your Accounts</h2>
+          <div className="accounts-table-wrap"><table className="tx-table"><thead><tr><th>Name</th><th>Type</th><th style={{ textAlign: 'right' }}>Balance</th></tr></thead><tbody>{accounts.map(a => (<tr key={a.id} onClick={() => navigate(`/account/${a.id}`)} style={{ cursor: 'pointer' }}><td>{a.name}</td><td>{accountTypeLabel(a.type)}</td><td><AccountBalance a={a} /></td></tr>))}</tbody></table></div>
+          
+          {/* 📱 手機版卡片 */}
+          <div className="accounts-cards">{accounts.map(a => (<div key={a.id} className="account-card-mobile" onClick={() => navigate(`/account/${a.id}`)} style={{ background: 'white', padding: '15px', borderRadius: '12px', marginBottom: '12px', boxShadow: '0 4px 10px rgba(0,0,0,0.05)' }}><div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ fontWeight: 700 }}>{a.name}</span><AccountBalance a={a} /></div></div>))}</div>
         </div>
       </div>
       <MobileTabBar />
