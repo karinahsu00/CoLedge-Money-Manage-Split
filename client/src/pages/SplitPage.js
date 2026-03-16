@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { groupsAPI, splitsAPI } from '../config/api';
+import { groupsAPI, splitsAPI, fxAPI } from '../config/api';
 import '../pages/Dashboard.css';
 import MobileTabBar from '../components/MobileTabBar';
 
@@ -30,6 +30,8 @@ const SplitPage = () => {
     const [newExpenseForm, setNewExpenseForm] = useState({
         date: new Date().toISOString().split('T')[0],
         amount: '',
+        currency: 'USD',
+        category: '',
         paidBy: 'You',
         description: '',
         splitWith: []
@@ -114,24 +116,39 @@ const SplitPage = () => {
     const handleAddExpense = async (e) => {
         e.preventDefault();
         if (!newExpenseForm.amount || !newExpenseForm.description || newExpenseForm.splitWith.length === 0) {
-            alert('Please fill in all fields');
+            alert('Please fill in amount, description and at least one member to split with.');
             return;
         }
-        const amount = parseFloat(newExpenseForm.amount);
-        const splitMembers = newExpenseForm.splitWith;
-        const amountPerPerson = amount / splitMembers.length;
-        const splitAmounts = {};
+        const amount      = parseFloat(newExpenseForm.amount);
+        const currency    = (newExpenseForm.currency || 'USD').toUpperCase().trim();
+        const splitMembers     = newExpenseForm.splitWith;
+        const amountPerPerson  = amount / splitMembers.length;
+        const splitAmounts     = {};
         splitMembers.forEach(m => { splitAmounts[m] = amountPerPerson; });
 
+        // FX: resolve usdAmount — currency → USD
+        let usdAmount = amount; // fallback: 1:1
+        try {
+            if (currency !== 'USD') {
+                const fxRes = await fxAPI.getRate(currency, 'USD');
+                usdAmount = amount * (fxRes?.rate || 1);
+            }
+        } catch (fxErr) {
+            console.warn('FX lookup failed, storing 1:1:', fxErr.message);
+        }
+
         const payload = {
-            groupId: selectedGroupId,
+            groupId:     selectedGroupId,
             totalAmount: amount,
             amount,
-            paidBy: newExpenseForm.paidBy,
+            usdAmount,
+            currency,
+            category:    newExpenseForm.category || 'Other',
+            paidBy:      newExpenseForm.paidBy,
             description: newExpenseForm.description,
-            date: newExpenseForm.date,
-            splitWith: splitMembers,
-            splitAmounts
+            date:        newExpenseForm.date,
+            splitWith:   splitMembers,
+            splitAmounts,
         };
 
         try {
@@ -140,6 +157,8 @@ const SplitPage = () => {
             setNewExpenseForm({
                 date: new Date().toISOString().split('T')[0],
                 amount: '',
+                currency: 'USD',
+                category: '',
                 paidBy: selectedGroup?.members?.[0] || 'You',
                 description: '',
                 splitWith: []
@@ -374,7 +393,103 @@ const SplitPage = () => {
                             </div>
                         </div>
 
-                        {/* Settlements and Forms omitted for brevity but remain in original logic... */}
+                        {/* ── Add Expense Form ── */}
+                        {showAddExpense && (
+                            <div style={{background: '#f9fafb', border: '1px solid #e0e0e0', borderRadius: '12px', padding: '20px', marginBottom: '20px'}}>
+                                <h3 style={{marginBottom: '16px', color: '#2C4C3B'}}>➕ New Expense</h3>
+                                <form onSubmit={handleAddExpense}>
+                                    <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '12px', marginBottom: '12px'}}>
+                                        {/* Date */}
+                                        <div className="form-group">
+                                            <label>Date</label>
+                                            <input type="date" className="form-input"
+                                                value={newExpenseForm.date}
+                                                onChange={e => setNewExpenseForm({...newExpenseForm, date: e.target.value})} />
+                                        </div>
+                                        {/* Description */}
+                                        <div className="form-group">
+                                            <label>Description *</label>
+                                            <input type="text" className="form-input" placeholder="e.g. Dinner"
+                                                value={newExpenseForm.description}
+                                                onChange={e => setNewExpenseForm({...newExpenseForm, description: e.target.value})} />
+                                        </div>
+                                        {/* Category */}
+                                        <div className="form-group">
+                                            <label>Category</label>
+                                            <select className="form-input"
+                                                value={newExpenseForm.category}
+                                                onChange={e => setNewExpenseForm({...newExpenseForm, category: e.target.value})}>
+                                                <option value="">Select</option>
+                                                {['Food', 'Accommodation', 'Transportation', 'Shopping', 'Entertainment', 'Utilities', 'Other'].map(c => (
+                                                    <option key={c} value={c}>{c}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        {/* Amount */}
+                                        <div className="form-group">
+                                            <label>Total Amount *</label>
+                                            <input type="number" step="0.01" className="form-input" placeholder="0.00"
+                                                value={newExpenseForm.amount}
+                                                onChange={e => setNewExpenseForm({...newExpenseForm, amount: e.target.value})} />
+                                        </div>
+                                        {/* Currency */}
+                                        <div className="form-group">
+                                            <label>Currency</label>
+                                            <input type="text" className="form-input" placeholder="USD, NTD, JPY…" maxLength={5}
+                                                value={newExpenseForm.currency}
+                                                onChange={e => setNewExpenseForm({...newExpenseForm, currency: e.target.value.toUpperCase()})} />
+                                        </div>
+                                        {/* Paid By */}
+                                        <div className="form-group">
+                                            <label>Paid By</label>
+                                            <select className="form-input"
+                                                value={newExpenseForm.paidBy}
+                                                onChange={e => setNewExpenseForm({...newExpenseForm, paidBy: e.target.value})}>
+                                                {(selectedGroup?.members || []).map(m => (
+                                                    <option key={m} value={m}>{m}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    {/* Split With checkboxes */}
+                                    <div className="form-group" style={{marginBottom: '16px'}}>
+                                        <label style={{marginBottom: '8px', display: 'block'}}>Split With *</label>
+                                        <div style={{display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center'}}>
+                                            <button type="button"
+                                                onClick={handleSelectAllMembers}
+                                                style={{padding: '4px 12px', borderRadius: '20px', border: '1px solid #2C4C3B', background: allMembersSelected ? '#2C4C3B' : 'white', color: allMembersSelected ? 'white' : '#2C4C3B', cursor: 'pointer', fontSize: '12px'}}>
+                                                {allMembersSelected ? '✓ All' : 'Select All'}
+                                            </button>
+                                            {(selectedGroup?.members || []).map(m => {
+                                                const checked = newExpenseForm.splitWith.includes(m);
+                                                return (
+                                                    <button key={m} type="button"
+                                                        onClick={() => handleToggleSplitMember(m)}
+                                                        style={{padding: '4px 14px', borderRadius: '20px', border: '1px solid #2C4C3B', background: checked ? '#2C4C3B' : 'white', color: checked ? 'white' : '#2C4C3B', cursor: 'pointer', fontSize: '13px'}}>
+                                                        {checked ? `✓ ${m}` : m}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                        {newExpenseForm.splitWith.length > 0 && (
+                                            <div style={{marginTop: '8px', fontSize: '12px', color: '#888'}}>
+                                                Each pays: {newExpenseForm.currency} {newExpenseForm.amount
+                                                    ? (parseFloat(newExpenseForm.amount) / newExpenseForm.splitWith.length).toFixed(2)
+                                                    : '—'}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div style={{display: 'flex', gap: '10px'}}>
+                                        <button type="submit" className="add-btn">Save Expense</button>
+                                        <button type="button" className="nav-btn"
+                                            onClick={() => setShowAddExpense(false)}>Cancel</button>
+                                    </div>
+                                </form>
+                            </div>
+                        )}
+
                         {/* ── Settlement Summary ── */}
                         {settlements.length > 0 && (
                             <div style={{marginBottom: '30px', background: '#fff3bf', padding: '15px', borderRadius: '8px'}}>
@@ -405,7 +520,16 @@ const SplitPage = () => {
                                             <tr key={expense.id} style={{borderBottom: '1px solid #eee'}}>
                                                 <td>{expense.date?.split('T')[0]}</td>
                                                 <td>{expense.description}</td>
-                                                <td style={{color: '#ff6b6b'}}>${parseFloat(expense.totalAmount || expense.amount).toFixed(2)}</td>
+                                                <td style={{color: '#ff6b6b', whiteSpace: 'nowrap'}}>
+                                                    {(() => {
+                                                        const usd = parseFloat(expense.usdAmount || expense.totalAmount || expense.amount || 0);
+                                                        const local = parseFloat(expense.totalAmount || expense.amount || 0);
+                                                        const cur = expense.currency || 'USD';
+                                                        return cur !== 'USD'
+                                                            ? <>{usd.toFixed(2)} USD<br/><span style={{fontSize:'11px',color:'#aaa'}}>{local.toFixed(2)} {cur}</span></>
+                                                            : <>{usd.toFixed(2)} USD</>;
+                                                    })()}
+                                                </td>
                                                 <td>{expense.paidBy}</td>
                                                 <td style={{fontSize: '11px'}}>{expense.splitWith?.join(', ')}</td>
                                                 <td>
@@ -424,7 +548,16 @@ const SplitPage = () => {
                                     <div key={expense.id} className="split-card-mobile-item" style={{border: '1px solid #eee', padding: '15px', borderRadius: '8px', marginBottom: '10px'}}>
                                         <div style={{display: 'flex', justifyContent: 'space-between', fontWeight: 'bold'}}>
                                             <span>{expense.description}</span>
-                                            <span style={{color: '#ff6b6b'}}>${parseFloat(expense.totalAmount || expense.amount).toFixed(2)}</span>
+                                            <span style={{color: '#ff6b6b', textAlign: 'right'}}>
+                                                {(() => {
+                                                    const usd = parseFloat(expense.usdAmount || expense.totalAmount || expense.amount || 0);
+                                                    const local = parseFloat(expense.totalAmount || expense.amount || 0);
+                                                    const cur = expense.currency || 'USD';
+                                                    return cur !== 'USD'
+                                                        ? <>{usd.toFixed(2)} USD<br/><span style={{fontSize:'11px',color:'#aaa'}}>{local.toFixed(2)} {cur}</span></>
+                                                        : <>{usd.toFixed(2)} USD</>;
+                                                })()}
+                                            </span>
                                         </div>
                                         <div style={{fontSize: '12px', color: '#666', marginTop: '5px'}}>
                                             <div>📅 {expense.date?.split('T')[0]}</div>
