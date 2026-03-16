@@ -9,10 +9,10 @@ import MobileTabBar from '../components/MobileTabBar';
 const AccountBalance = ({ a }) => {
   const bal = Number(a.balance || 0);
   const rate = Number(a.fxRateToUSD || 1);
-  const usdEquiv = (a.currency === 'USD' ? bal : bal * rate).toFixed(2);
+  const usdVal = (bal * rate).toFixed(2);
   return (
     <div style={{ textAlign: 'right' }}>
-      <div style={{ fontWeight: 700, fontSize: '1.1em', color: '#2C4C3B' }}>{usdEquiv} USD</div>
+      <div style={{ fontWeight: 700, fontSize: '1.1em', color: '#2C4C3B' }}>{usdVal} USD</div>
       {a.currency !== 'USD' && <div style={{ fontSize: '0.85em', color: '#888' }}>{bal.toFixed(2)} {a.currency}</div>}
     </div>
   );
@@ -33,7 +33,14 @@ const AccountsPage = () => {
 
   useEffect(() => { loadAccounts(); }, []);
 
-  const totalUSD = useMemo(() => (accounts || []).reduce((sum, a) => sum + (Number(a.balance) * Number(a.fxRateToUSD || 1)), 0), [accounts]);
+  // 核心數學修正：計算全球資產 USD 總額
+  const totalNetWorthUSD = useMemo(() => {
+    return (accounts || []).reduce((sum, a) => {
+      const bal = Number(a.balance || 0);
+      const rate = Number(a.fxRateToUSD || 1);
+      return sum + (bal * rate);
+    }, 0);
+  }, [accounts]);
 
   return (
     <div className="dashboard-container accounts-page">
@@ -51,11 +58,12 @@ const AccountsPage = () => {
       <div className="dashboard-content">
         <div className="dashboard-header"><h1>🏷️ Accounts</h1></div>
 
+        {/* 恢復 KPI 卡片區塊 */}
         <div className="transaction-form-section">
             <div className="account-overview-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
                 <div className="account-kpi" style={{ borderLeft: '5px solid #2C4C3B' }}>
                     <div className="account-kpi-label">Total Net Worth (USD)</div>
-                    <div className="account-kpi-value" style={{ fontSize: '1.8rem', color: '#2C4C3B' }}>{totalUSD.toFixed(2)} USD</div>
+                    <div className="account-kpi-value" style={{ fontSize: '1.8rem', color: '#2C4C3B' }}>{totalNetWorthUSD.toFixed(2)}</div>
                 </div>
                 <div className="account-kpi">
                     <div className="account-kpi-label">Active Accounts</div>
