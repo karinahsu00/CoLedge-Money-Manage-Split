@@ -5,40 +5,32 @@ import { accountsAPI, transactionsAPI, fxAPI } from '../config/api';
 import '../pages/Dashboard.css';
 import MobileTabBar from '../components/MobileTabBar';
 
-const EMPTY_EDIT = {
-  date: '', type: 'expense', category: '', accountId: '', accountToId: '',
-  member: 'You', note: '', amount: '', toAmount: '', fxRate: '',
-  fromCurrency: '', toCurrency: '', fxAuto: true,
-};
-
 const safeNum = (v, fallback = 0) => {
   const n = Number(v);
   return Number.isFinite(n) ? n : fallback;
 };
 
-/** * 金額顯示組件：貫徹 USD 優先，原幣括號的原則 */
 const AmountDisplay = ({ t, accountById }) => {
   const amount = safeNum(t.amount, 0);
   const acc = accountById.get(t.accountId);
   const accTo = accountById.get(t.accountToId);
-  const localCurrency = t.currency || acc?.currency || 'USD';
+  const localCur = t.currency || acc?.currency || 'USD';
   
-  // 計算發出方的 USD 價值
-  const fromRate = safeNum(acc?.fxRateToUSD, 1);
-  const fromUsd = t.usdAmount != null ? safeNum(t.usdAmount) : (amount * fromRate);
+  // 核心邏輯：USD = 原幣 * 存檔時的匯率 (或帳戶現行匯率)
+  const rate = safeNum(t.fxRateToUSD || acc?.fxRateToUSD, 1);
+  const usdVal = t.usdAmount != null ? safeNum(t.usdAmount) : (amount * rate);
 
   if (t.type === 'transfer') {
     const toAmt = safeNum(t.toAmount || t.amount);
     const toRate = safeNum(accTo?.fxRateToUSD, 1);
     const toUsd = toAmt * toRate;
-    
     return (
       <div style={{ textAlign: 'right', fontSize: '13px' }}>
         <div style={{ fontWeight: 600, color: '#2C4C3B' }}>
-            {fromUsd.toFixed(2)} USD <span style={{fontSize: '0.85em', color: '#888', fontWeight: 400}}>({amount.toFixed(2)} {acc?.currency})</span>
+            {usdVal.toFixed(2)} USD <span style={{fontSize: '0.8em', color: '#888'}}>({amount.toFixed(2)} {acc?.currency})</span>
         </div>
         <div style={{ color: '#888' }}>
-          → {toUsd.toFixed(2)} USD <span style={{fontSize: '0.85em'}}>( {toAmt.toFixed(2)} {accTo?.currency} )</span>
+          → {toUsd.toFixed(2)} USD <span style={{fontSize: '0.8em'}}>( {toAmt.toFixed(2)} {accTo?.currency} )</span>
         </div>
       </div>
     );
@@ -46,10 +38,10 @@ const AmountDisplay = ({ t, accountById }) => {
 
   return (
     <div style={{ textAlign: 'right' }}>
-      <span style={{ fontWeight: 600 }}>{fromUsd.toFixed(2)} USD</span>
-      {localCurrency !== 'USD' && (
+      <span style={{ fontWeight: 600 }}>{usdVal.toFixed(2)} USD</span>
+      {localCur !== 'USD' && (
         <span style={{ color: '#888', fontSize: '0.85em', display: 'block' }}>
-          ({amount.toFixed(2)} {localCurrency})
+          ({amount.toFixed(2)} {localCur})
         </span>
       )}
     </div>
@@ -59,7 +51,6 @@ const AmountDisplay = ({ t, accountById }) => {
 const DashboardPage = () => {
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
-
   const [transactionType, setTransactionType] = useState('expense');
   const [accounts, setAccounts] = useState([]);
   const [transactions, setTransactions] = useState([]);
@@ -73,9 +64,6 @@ const DashboardPage = () => {
     member: 'You', type: 'expense', note: '', toAmount: '',
     fxRate: '', fxAuto: true,
   });
-
-  const [editingId, setEditingId] = useState(null);
-  const [editForm, setEditForm] = useState(EMPTY_EDIT);
 
   const accountById = useMemo(() => {
     const m = new Map();
@@ -91,7 +79,6 @@ const DashboardPage = () => {
 
   useEffect(() => { reloadAll().then(() => setLoading(false)); }, []);
 
-  // 轉帳自動換算邏輯：串接妳的後端 FX 路由
   useEffect(() => {
     const runFx = async () => {
       if (transactionType !== 'transfer' || !formData.fxAuto || !formData.amount || !formData.accountId || !formData.accountToId) return;
@@ -105,7 +92,7 @@ const DashboardPage = () => {
         const res = await fxAPI.getRate(fromCur, toCur);
         const rate = safeNum(res?.rate, 1);
         setFormData(prev => ({ ...prev, fxRate: rate, toAmount: (safeNum(prev.amount) * rate).toFixed(2) }));
-      } catch (e) { console.error("FX calculation failed", e); }
+      } catch (e) { console.error(e); }
     };
     runFx();
   }, [formData.amount, formData.accountId, formData.accountToId, transactionType, formData.fxAuto, accountById]);
@@ -128,18 +115,13 @@ const DashboardPage = () => {
         type: transactionType,
         category: transactionType === 'transfer' ? 'Internal Transfer' : formData.category,
         currency: acc?.currency || 'USD',
-        fxRateToUSD: acc?.fxRateToUSD || null,
+        fxRateToUSD: acc?.fxRateToUSD || null, // 存入當下匯率
         createdAt: new Date().toISOString() 
       };
       await transactionsAPI.create(payload);
       await reloadAll();
       setFormData(p => ({ ...p, amount: '', note: '', category: '', toAmount: '', fxAuto: true }));
-    } catch (e) { alert('Failed to save transaction'); } finally { setSubmitting(false); }
-  };
-
-  const openEdit = (t) => {
-    setEditingId(t.id);
-    setEditForm({ ...t, amount: String(t.amount), note: t.note || '' });
+    } catch (e) { alert('Failed'); } finally { setSubmitting(false); }
   };
 
   const filteredTransactions = useMemo(() => {
@@ -147,6 +129,9 @@ const DashboardPage = () => {
       .filter(t => t.type === transactionType)
       .sort((a, b) => sortOrder === 'desc' ? new Date(b.date) - new Date(a.date) : new Date(a.date) - new Date(b.date));
   }, [transactions, transactionType, sortOrder]);
+
+  const curFrom = accountById.get(formData.accountId)?.currency || 'USD';
+  const curTo = accountById.get(formData.accountToId)?.currency || 'USD';
 
   return (
     <div className="dashboard-container record-page">
@@ -163,16 +148,12 @@ const DashboardPage = () => {
 
       <div className="dashboard-content">
         <div className="dashboard-header"><h1>📝 Record Transaction</h1></div>
-
         <div className="transaction-form-section">
           <h2>Add New {transactionType}</h2>
           <form onSubmit={handleAddTransaction} className="transaction-form">
             <div className="form-row">
               <div className="form-group"><label>Date</label><input type="date" name="date" value={formData.date} onChange={handleInputChange} className="form-input" /></div>
-              <div className="form-group">
-                <label>Amount ({accountById.get(formData.accountId)?.currency || 'USD'})</label>
-                <input type="number" step="0.01" name="amount" value={formData.amount} onChange={handleInputChange} className="form-input" placeholder="0.00" />
-              </div>
+              <div className="form-group"><label>Amount ({curFrom})</label><input type="number" step="0.01" name="amount" value={formData.amount} onChange={handleInputChange} className="form-input" /></div>
               <div className="form-group">
                 <label>{transactionType === 'transfer' ? 'From Account' : 'Account'}</label>
                 <select name="accountId" value={formData.accountId} onChange={handleInputChange} className="form-input">
@@ -187,13 +168,17 @@ const DashboardPage = () => {
                 <div className="form-group">
                   <label>To Account</label>
                   <select name="accountToId" value={formData.accountToId} onChange={handleInputChange} className="form-input">
-                    <option value="">Select Account</option>
+                    <option value="">Select</option>
                     {accounts.filter(acc => acc.id !== formData.accountId).map(acc => <option key={acc.id} value={acc.id}>{acc.name} ({acc.currency})</option>)}
                   </select>
                 </div>
                 <div className="form-group">
-                  <label>To Amount ({accountById.get(formData.accountToId)?.currency || 'USD'})</label>
-                  <input type="number" step="0.01" name="toAmount" value={formData.toAmount} onChange={handleInputChange} className="form-input" placeholder="Auto-calculated" />
+                  <label>To Amount ({curTo})</label>
+                  <input type="number" step="0.01" name="toAmount" value={formData.toAmount} onChange={handleInputChange} className="form-input" />
+                  <div style={{fontSize: '11px', color: '#888', marginTop: '4px'}}>
+                    Rate: 1 {curFrom} = {formData.fxRate || '—'} {curTo}
+                    {!formData.fxAuto && <span onClick={() => setFormData(p => ({...p, fxAuto: true}))} style={{marginLeft: '10px', color: '#2C4C3B', cursor: 'pointer', textDecoration: 'underline'}}>Reset Auto</span>}
+                  </div>
                 </div>
               </div>
             )}
@@ -208,9 +193,9 @@ const DashboardPage = () => {
                     </select>
                 </div>
               )}
-              <div className="form-group"><label>Note</label><input type="text" name="note" value={formData.note} onChange={handleInputChange} className="form-input" placeholder="Optional note" /></div>
+              <div className="form-group"><label>Note</label><input type="text" name="note" value={formData.note} onChange={handleInputChange} className="form-input" /></div>
             </div>
-            <button type="submit" className="add-btn" disabled={submitting}>{submitting ? 'Saving...' : `Add ${transactionType}`}</button>
+            <button type="submit" className="add-btn" disabled={submitting}>Add Transaction</button>
           </form>
         </div>
 
@@ -222,14 +207,14 @@ const DashboardPage = () => {
 
         <div className="transaction-list">
           <div className="tx-header">
-              <h2>Recent Transactions</h2>
-              <select value={sortOrder} onChange={(e) => setSortOrder(e.target.value)} className="form-input" style={{width: 'auto'}}>
+            <h2>Recent Transactions</h2>
+            <select value={sortOrder} onChange={(e) => setSortOrder(e.target.value)} className="form-input" style={{width: 'auto'}}>
                 <option value="desc">Newest First</option><option value="asc">Oldest First</option>
-              </select>
+            </select>
           </div>
           <div className="tx-table-wrap">
             <table className="tx-table">
-              <thead><tr><th>Date</th><th>Category</th><th>Account</th><th>Note</th><th style={{ textAlign: 'right' }}>Amount</th><th style={{ textAlign: 'right' }}>Actions</th></tr></thead>
+              <thead><tr><th>Date</th><th>Category</th><th>Account</th><th>Note</th><th style={{ textAlign: 'right' }}>Amount</th><th>Actions</th></tr></thead>
               <tbody>
                 {filteredTransactions.map(t => (
                   <tr key={t.id}>
@@ -238,10 +223,7 @@ const DashboardPage = () => {
                     <td>{t.note}</td>
                     <td><AmountDisplay t={t} accountById={accountById} /></td>
                     <td style={{textAlign: 'right'}}>
-                        <div style={{display: 'flex', gap: '8px', justifyContent: 'flex-end'}}>
-                            <button className="edit-btn" onClick={() => openEdit(t)}>Edit</button>
-                            <button className="delete-btn" onClick={() => transactionsAPI.delete(t.id).then(reloadAll)}>Delete</button>
-                        </div>
+                        <button className="delete-btn" onClick={() => transactionsAPI.delete(t.id).then(reloadAll)}>Delete</button>
                     </td>
                   </tr>
                 ))}
