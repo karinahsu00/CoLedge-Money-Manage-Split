@@ -21,48 +21,32 @@ const safeNum = (v, fallback = 0) => {
 const AmountDisplay = ({ t, accountById }) => {
   const amount = safeNum(t.amount, 0);
   const acc = accountById.get(t.accountId);
+  const localCurrency = t.currency || acc?.currency || 'USD';
   
-  // 優先級：交易紀錄幣別 > 帳戶原幣 > 預設 USD
-  const localCurrency = t.currency || t.fromCurrency || acc?.currency || 'USD';
-  
-  // 取得 USD 等值
-  let usdAmt = null;
-  if (t.usdAmount != null) usdAmt = safeNum(t.usdAmount);
-  else if (t.fxRateToUSD != null) usdAmt = amount * safeNum(t.fxRateToUSD);
-  else if (acc?.fxRateToUSD != null && localCurrency !== 'USD') usdAmt = amount * safeNum(acc.fxRateToUSD);
-  else if (localCurrency === 'USD') usdAmt = amount;
+  // 計算 USD 等值：優先用存好的 usdAmount，沒有就用匯率算
+  const usdVal = t.usdAmount != null ? safeNum(t.usdAmount) : (amount * safeNum(acc?.fxRateToUSD || 1));
 
-  // 轉帳邏輯
+  // 如果是轉帳，我們維持原樣（顯示從哪到哪）
   if (t.type === 'transfer') {
     return (
       <div style={{ textAlign: 'right', fontSize: '13px' }}>
-        <div style={{ fontWeight: 600, color: '#2C4C3B' }}>
-          {safeNum(t.fromAmount || t.amount).toFixed(2)} {t.fromCurrency || 'USD'}
-        </div>
-        <div style={{ color: '#888' }}>
-          → {safeNum(t.toAmount || t.amount).toFixed(2)} {t.toCurrency || 'USD'}
-        </div>
+        <div style={{ fontWeight: 600, color: '#2C4C3B' }}>{safeNum(t.fromAmount || t.amount).toFixed(2)} {t.fromCurrency}</div>
+        <div style={{ color: '#888' }}>→ {safeNum(t.toAmount || t.amount).toFixed(2)} {t.toCurrency}</div>
       </div>
     );
   }
 
-  // 強制顯示：只要原幣不是 USD，就必須顯示 ( 原幣金額 )
-  if (localCurrency !== 'USD') {
-    // 這裡我們預設存入的 amount 就是原幣金額
-    // 如果資料庫顯示 usdAmt，我們就反推或直接顯示
-    const displayUSD = usdAmt !== null ? usdAmt.toFixed(2) : (amount * (acc?.fxRateToUSD || 1)).toFixed(2);
-    
-    return (
-      <div style={{ textAlign: 'right' }}>
-        <span style={{ fontWeight: 600 }}>{displayUSD} USD</span>
-        <span style={{ color: '#888', fontSize: '0.85em', display: 'block' }}>
-          ( {amount.toFixed(2)} {localCurrency} )
+  // 非轉帳：主角是 USD，配角是原幣
+  return (
+    <div style={{ textAlign: 'right' }}>
+      <span style={{ fontWeight: 600 }}>{usdVal.toFixed(2)} USD</span>
+      {localCurrency !== 'USD' && (
+        <span style={{ color: '#888', fontSize: '0.85em', marginLeft: '5px' }}>
+          ({amount.toFixed(2)} {localCurrency})
         </span>
-      </div>
-    );
-  }
-
-  return <div style={{ textAlign: 'right', fontWeight: 600 }}>{amount.toFixed(2)} USD</div>;
+      )}
+    </div>
+  );
 };
 
 const DashboardPage = () => {
