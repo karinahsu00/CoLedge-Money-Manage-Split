@@ -16,32 +16,39 @@ const safeNum = (v, fallback = 0) => {
   return Number.isFinite(n) ? n : fallback;
 };
 
-/** * 修正後的金額顯示組件：強制從帳戶抓取原幣資訊
- */
+/** * 金額顯示組件：貫徹 USD 優先，原幣括號的原則 */
 const AmountDisplay = ({ t, accountById }) => {
   const amount = safeNum(t.amount, 0);
   const acc = accountById.get(t.accountId);
+  const accTo = accountById.get(t.accountToId);
   const localCurrency = t.currency || acc?.currency || 'USD';
   
-  // 計算 USD 等值：優先用存好的 usdAmount，沒有就用匯率算
-  const usdVal = t.usdAmount != null ? safeNum(t.usdAmount) : (amount * safeNum(acc?.fxRateToUSD || 1));
+  // 計算發出方的 USD 價值
+  const fromRate = safeNum(acc?.fxRateToUSD, 1);
+  const fromUsd = t.usdAmount != null ? safeNum(t.usdAmount) : (amount * fromRate);
 
-  // 如果是轉帳，我們維持原樣（顯示從哪到哪）
   if (t.type === 'transfer') {
+    const toAmt = safeNum(t.toAmount || t.amount);
+    const toRate = safeNum(accTo?.fxRateToUSD, 1);
+    const toUsd = toAmt * toRate;
+    
     return (
       <div style={{ textAlign: 'right', fontSize: '13px' }}>
-        <div style={{ fontWeight: 600, color: '#2C4C3B' }}>{safeNum(t.fromAmount || t.amount).toFixed(2)} {t.fromCurrency}</div>
-        <div style={{ color: '#888' }}>→ {safeNum(t.toAmount || t.amount).toFixed(2)} {t.toCurrency}</div>
+        <div style={{ fontWeight: 600, color: '#2C4C3B' }}>
+            {fromUsd.toFixed(2)} USD <span style={{fontSize: '0.85em', color: '#888', fontWeight: 400}}>({amount.toFixed(2)} {acc?.currency})</span>
+        </div>
+        <div style={{ color: '#888' }}>
+          → {toUsd.toFixed(2)} USD <span style={{fontSize: '0.85em'}}>( {toAmt.toFixed(2)} {accTo?.currency} )</span>
+        </div>
       </div>
     );
   }
 
-  // 非轉帳：主角是 USD，配角是原幣
   return (
     <div style={{ textAlign: 'right' }}>
-      <span style={{ fontWeight: 600 }}>{usdVal.toFixed(2)} USD</span>
+      <span style={{ fontWeight: 600 }}>{fromUsd.toFixed(2)} USD</span>
       {localCurrency !== 'USD' && (
-        <span style={{ color: '#888', fontSize: '0.85em', marginLeft: '5px' }}>
+        <span style={{ color: '#888', fontSize: '0.85em', display: 'block' }}>
           ({amount.toFixed(2)} {localCurrency})
         </span>
       )}
@@ -58,24 +65,17 @@ const DashboardPage = () => {
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState('');
-
-  const [customCategories, setCustomCategories] = useState({
-    expense: ['Food', 'Transportation', 'Shopping', 'Utilities', 'Entertainment', 'Other'],
-    income: ['Salary', 'Bonus', 'Interest', 'Other'],
-    transfer: ['Internal Transfer'],
-  });
-
-  const [newCategory, setNewCategory] = useState('');
-  const [showAddCategory, setShowAddCategory] = useState(false);
   const [sortOrder, setSortOrder] = useState('desc');
 
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
     amount: '', category: '', accountId: '', accountToId: '',
     member: 'You', type: 'expense', note: '', toAmount: '',
-    fxRate: '', fromCurrency: '', toCurrency: '', fxAuto: true,
+    fxRate: '', fxAuto: true,
   });
+
+  const [editingId, setEditingId] = useState(null);
+  const [editForm, setEditForm] = useState(EMPTY_EDIT);
 
   const accountById = useMemo(() => {
     const m = new Map();
@@ -83,62 +83,69 @@ const DashboardPage = () => {
     return m;
   }, [accounts]);
 
-  const accountNameById = useMemo(() => {
-    const m = new Map();
-    (accounts || []).forEach((a) => { if (a?.id) m.set(a.id, a.name); });
-    return m;
-  }, [accounts]);
-
   const reloadAll = async () => {
-    try {
-      const [acct, tx] = await Promise.all([accountsAPI.getAll(), transactionsAPI.getAll()]);
-      setAccounts(Array.isArray(acct) ? acct : []);
-      setTransactions(Array.isArray(tx) ? tx : []);
-    } catch (e) { console.error(e); }
+    const [acct, tx] = await Promise.all([accountsAPI.getAll(), transactionsAPI.getAll()]);
+    setAccounts(Array.isArray(acct) ? acct : []);
+    setTransactions(Array.isArray(tx) ? tx : []);
   };
 
-  useEffect(() => {
-    reloadAll().then(() => setLoading(false));
-  }, []);
+  useEffect(() => { reloadAll().then(() => setLoading(false)); }, []);
 
-  // 當選擇帳戶時，自動更新輸入框的幣別提示
-  const selectedAccCurrency = useMemo(() => {
-    return accountById.get(formData.accountId)?.currency || 'USD';
-  }, [formData.accountId, accountById]);
+  // 轉帳自動換算邏輯：串接妳的後端 FX 路由
+  useEffect(() => {
+    const runFx = async () => {
+      if (transactionType !== 'transfer' || !formData.fxAuto || !formData.amount || !formData.accountId || !formData.accountToId) return;
+      try {
+        const fromCur = accountById.get(formData.accountId)?.currency;
+        const toCur = accountById.get(formData.accountToId)?.currency;
+        if (fromCur === toCur) {
+            setFormData(prev => ({ ...prev, fxRate: 1, toAmount: prev.amount }));
+            return;
+        }
+        const res = await fxAPI.getRate(fromCur, toCur);
+        const rate = safeNum(res?.rate, 1);
+        setFormData(prev => ({ ...prev, fxRate: rate, toAmount: (safeNum(prev.amount) * rate).toFixed(2) }));
+      } catch (e) { console.error("FX calculation failed", e); }
+    };
+    runFx();
+  }, [formData.amount, formData.accountId, formData.accountToId, transactionType, formData.fxAuto, accountById]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    if (name === 'toAmount') setFormData(prev => ({ ...prev, toAmount: value, fxAuto: false }));
+    else setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   const handleAddTransaction = async (e) => {
     e.preventDefault();
-    if (!formData.amount || !formData.category || !formData.accountId) return alert('Please fill in required fields');
-    
+    if (!formData.amount || !formData.accountId) return alert('Please fill in required fields');
     try {
       setSubmitting(true);
       const acc = accountById.get(formData.accountId);
-      
-      const payload = {
-        ...formData,
-        amount: Number(formData.amount),
+      const payload = { 
+        ...formData, 
+        amount: Number(formData.amount), 
+        type: transactionType,
+        category: transactionType === 'transfer' ? 'Internal Transfer' : formData.category,
         currency: acc?.currency || 'USD',
         fxRateToUSD: acc?.fxRateToUSD || null,
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString() 
       };
-      
       await transactionsAPI.create(payload);
       await reloadAll();
-      setFormData(p => ({ ...p, amount: '', note: '', category: '' }));
-    } catch (e) { setError('Failed to add transaction'); } finally { setSubmitting(false); }
+      setFormData(p => ({ ...p, amount: '', note: '', category: '', toAmount: '', fxAuto: true }));
+    } catch (e) { alert('Failed to save transaction'); } finally { setSubmitting(false); }
+  };
+
+  const openEdit = (t) => {
+    setEditingId(t.id);
+    setEditForm({ ...t, amount: String(t.amount), note: t.note || '' });
   };
 
   const filteredTransactions = useMemo(() => {
-    let list = Array.isArray(transactions) ? [...transactions] : [];
-    list = list.filter((t) => t.type === transactionType);
-    return list.sort((a, b) => sortOrder === 'desc' 
-      ? new Date(b.date) - new Date(a.date) 
-      : new Date(a.date) - new Date(b.date));
+    return (Array.isArray(transactions) ? transactions : [])
+      .filter(t => t.type === transactionType)
+      .sort((a, b) => sortOrder === 'desc' ? new Date(b.date) - new Date(a.date) : new Date(a.date) - new Date(b.date));
   }, [transactions, transactionType, sortOrder]);
 
   return (
@@ -161,36 +168,49 @@ const DashboardPage = () => {
           <h2>Add New {transactionType}</h2>
           <form onSubmit={handleAddTransaction} className="transaction-form">
             <div className="form-row">
+              <div className="form-group"><label>Date</label><input type="date" name="date" value={formData.date} onChange={handleInputChange} className="form-input" /></div>
               <div className="form-group">
-                <label>Date</label>
-                <input type="date" name="date" value={formData.date} onChange={handleInputChange} className="form-input" />
-              </div>
-              <div className="form-group">
-                <label>Amount ({selectedAccCurrency})</label>
+                <label>Amount ({accountById.get(formData.accountId)?.currency || 'USD'})</label>
                 <input type="number" step="0.01" name="amount" value={formData.amount} onChange={handleInputChange} className="form-input" placeholder="0.00" />
               </div>
               <div className="form-group">
-                <label>Account</label>
+                <label>{transactionType === 'transfer' ? 'From Account' : 'Account'}</label>
                 <select name="accountId" value={formData.accountId} onChange={handleInputChange} className="form-input">
-                  <option value="">Select Account</option>
-                  {accounts.map(acc => <option key={acc.id} value={acc.id}>{acc.name} ({acc.currency})</option>)}
+                    <option value="">Select Account</option>
+                    {accounts.map(acc => <option key={acc.id} value={acc.id}>{acc.name} ({acc.currency})</option>)}
                 </select>
               </div>
             </div>
+
+            {transactionType === 'transfer' && (
+              <div className="form-row">
+                <div className="form-group">
+                  <label>To Account</label>
+                  <select name="accountToId" value={formData.accountToId} onChange={handleInputChange} className="form-input">
+                    <option value="">Select Account</option>
+                    {accounts.filter(acc => acc.id !== formData.accountId).map(acc => <option key={acc.id} value={acc.id}>{acc.name} ({acc.currency})</option>)}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>To Amount ({accountById.get(formData.accountToId)?.currency || 'USD'})</label>
+                  <input type="number" step="0.01" name="toAmount" value={formData.toAmount} onChange={handleInputChange} className="form-input" placeholder="Auto-calculated" />
+                </div>
+              </div>
+            )}
+
             <div className="form-row">
-              <div className="form-group">
-                <label>Category</label>
-                <select name="category" value={formData.category} onChange={handleInputChange} className="form-input">
-                  <option value="">Select Category</option>
-                  {customCategories[transactionType].map(cat => <option key={cat} value={cat}>{cat}</option>)}
-                </select>
-              </div>
-              <div className="form-group">
-                <label>Note</label>
-                <input type="text" name="note" value={formData.note} onChange={handleInputChange} className="form-input" placeholder="Optional" />
-              </div>
+              {transactionType !== 'transfer' && (
+                <div className="form-group">
+                    <label>Category</label>
+                    <select name="category" value={formData.category} onChange={handleInputChange} className="form-input">
+                        <option value="">Select Category</option>
+                        {['Food', 'Transportation', 'Shopping', 'Utilities', 'Entertainment', 'Salary', 'Other'].map(c => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                </div>
+              )}
+              <div className="form-group"><label>Note</label><input type="text" name="note" value={formData.note} onChange={handleInputChange} className="form-input" placeholder="Optional note" /></div>
             </div>
-            <button type="submit" className="add-btn" disabled={submitting}>Add Transaction</button>
+            <button type="submit" className="add-btn" disabled={submitting}>{submitting ? 'Saving...' : `Add ${transactionType}`}</button>
           </form>
         </div>
 
@@ -202,42 +222,31 @@ const DashboardPage = () => {
 
         <div className="transaction-list">
           <div className="tx-header">
-            <h2>Recent Transactions</h2>
-            <select value={sortOrder} onChange={(e) => setSortOrder(e.target.value)}>
-              <option value="desc">Newest</option><option value="asc">Oldest</option>
-            </select>
+              <h2>Recent Transactions</h2>
+              <select value={sortOrder} onChange={(e) => setSortOrder(e.target.value)} className="form-input" style={{width: 'auto'}}>
+                <option value="desc">Newest First</option><option value="asc">Oldest First</option>
+              </select>
           </div>
-
           <div className="tx-table-wrap">
             <table className="tx-table">
-              <thead>
-                <tr><th>Date</th><th>Category</th><th>Account</th><th>Note</th><th style={{ textAlign: 'right' }}>Amount</th></tr>
-              </thead>
+              <thead><tr><th>Date</th><th>Category</th><th>Account</th><th>Note</th><th style={{ textAlign: 'right' }}>Amount</th><th style={{ textAlign: 'right' }}>Actions</th></tr></thead>
               <tbody>
                 {filteredTransactions.map(t => (
                   <tr key={t.id}>
                     <td>{t.date}</td><td>{t.category}</td>
-                    <td>{t.type === 'transfer' ? `${accountNameById.get(t.accountId)} → ${accountNameById.get(t.accountToId)}` : accountNameById.get(t.accountId)}</td>
+                    <td>{t.type === 'transfer' ? `${accountById.get(t.accountId)?.name} → ${accountById.get(t.accountToId)?.name}` : accountById.get(t.accountId)?.name}</td>
                     <td>{t.note}</td>
                     <td><AmountDisplay t={t} accountById={accountById} /></td>
+                    <td style={{textAlign: 'right'}}>
+                        <div style={{display: 'flex', gap: '8px', justifyContent: 'flex-end'}}>
+                            <button className="edit-btn" onClick={() => openEdit(t)}>Edit</button>
+                            <button className="delete-btn" onClick={() => transactionsAPI.delete(t.id).then(reloadAll)}>Delete</button>
+                        </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
-          </div>
-
-          <div className="tx-cards">
-            {filteredTransactions.map(t => (
-              <div key={t.id} className="tx-card" style={{ padding: '15px', borderBottom: '1px solid #eee' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
-                  <span style={{ fontWeight: 600 }}>{t.category}</span>
-                  <AmountDisplay t={t} accountById={accountById} />
-                </div>
-                <div style={{ fontSize: '12px', color: '#888' }}>
-                  {t.date} • {accountNameById.get(t.accountId)}
-                </div>
-              </div>
-            ))}
           </div>
         </div>
       </div>
