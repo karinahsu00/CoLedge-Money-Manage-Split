@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { accountsAPI } from '../config/api';
+import { accountsAPI, transactionsAPI } from '../config/api';
 import { accountTypeLabel } from '../constants/accountTypes';
 import './Dashboard.css';
 import MobileTabBar from '../components/MobileTabBar';
@@ -13,12 +13,11 @@ const safeNum = (v, fallback = 0) => {
 
 // ─── AccountBalance ───────────────────────────────────────────────────────────
 // Displays: XX.XX USD + (YY.YY LocalCurrency) when currency ≠ USD
-const AccountBalance = ({ a }) => {
-  const bal     = safeNum(a.balance, 0);
-  // fxRateToUSD: how many USD = 1 unit of local currency
-  // e.g. if JPY: fxRateToUSD ≈ 0.0067  →  bal * rate gives correct USD
-  const fxRate  = safeNum(a.fxRateToUSD, 1);
-  const usdBal  = bal * fxRate;
+// `runningBal` is the transaction-derived balance (passed in from runningBalanceMap)
+const AccountBalance = ({ a, runningBal }) => {
+  const bal    = safeNum(runningBal ?? a.initialBalance, 0);
+  const fxRate = safeNum(a.fxRateToUSD, 1);
+  const usdBal = bal * fxRate;
 
   return (
     <div style={{ textAlign: 'right' }}>
@@ -38,24 +37,59 @@ const AccountBalance = ({ a }) => {
 const AccountsPage = () => {
   const navigate      = useNavigate();
   const { logout }    = useAuth();
-  const [accounts, setAccounts] = useState([]);
-  const [loading, setLoading]   = useState(true);
+  const [accounts, setAccounts]         = useState([]);
+  const [transactions, setTransactions] = useState([]);
+  const [loading, setLoading]           = useState(true);
 
   const loadAccounts = async () => {
-    const res = await accountsAPI.getAll();
-    setAccounts(res?.data ?? res);
+    const [acctRes, txRes] = await Promise.all([
+      accountsAPI.getAll(),
+      transactionsAPI.getAll(),
+    ]);
+    setAccounts(acctRes?.data ?? acctRes ?? []);
+    setTransactions(Array.isArray(txRes) ? txRes : []);
     setLoading(false);
   };
 
   useEffect(() => { loadAccounts(); }, []);
 
-  // Total net worth: sum of each account's balance converted to USD
+  // ── Running Balance per account ─────────────────────────────────────────────
+  // Mirrors AccountDetailPage logic exactly:
+  //   running = initialBalance + income + transferIn - expense - transferOut
+  // All figures kept in the account's LOCAL currency.
+  const runningBalanceMap = useMemo(() => {
+    const map = new Map();
+    (accounts || []).forEach(a => {
+      let running = safeNum(a.initialBalance, 0);
+      (transactions || [])
+        .filter(t => t.accountId === a.id || t.accountToId === a.id)
+        .sort((x, y) => new Date(x.date) - new Date(y.date))
+        .forEach(t => {
+          const amt = safeNum(t.amount, 0);
+          if (t.type === 'income' && t.accountId === a.id) {
+            running += amt;
+          } else if (t.type === 'expense' && t.accountId === a.id) {
+            running -= amt;
+          } else if (t.type === 'transfer') {
+            if (t.accountId === a.id) {
+              running -= safeNum(t.fromAmount || t.amount, 0);
+            } else {
+              running += safeNum(t.toAmount   || t.amount, 0);
+            }
+          }
+        });
+      map.set(a.id, running);
+    });
+    return map;
+  }, [accounts, transactions]);
+
+  // Total net worth: sum of each account's RUNNING balance converted to USD
   const totalUSD = useMemo(() =>
-    (accounts || []).reduce(
-      (sum, a) => sum + safeNum(a.balance) * safeNum(a.fxRateToUSD, 1),
-      0,
-    ),
-  [accounts]);
+    (accounts || []).reduce((sum, a) => {
+      const running = runningBalanceMap.get(a.id) ?? safeNum(a.initialBalance, 0);
+      return sum + running * safeNum(a.fxRateToUSD, 1);
+    }, 0),
+  [accounts, runningBalanceMap]);
 
   return (
     <div className="dashboard-container accounts-page">
@@ -116,7 +150,7 @@ const AccountsPage = () => {
                   >
                     <td>{a.name}</td>
                     <td>{accountTypeLabel(a.type)}</td>
-                    <td><AccountBalance a={a} /></td>
+                    <td><AccountBalance a={a} runningBal={runningBalanceMap.get(a.id)} /></td>
                   </tr>
                 ))}
               </tbody>
@@ -126,7 +160,7 @@ const AccountsPage = () => {
           {/* Mobile cards — full detail restored */}
           <div className="accounts-cards">
             {accounts.map(a => {
-              const bal    = safeNum(a.balance, 0);
+              const bal    = safeNum(runningBalanceMap.get(a.id) ?? a.initialBalance, 0);
               const fxRate = safeNum(a.fxRateToUSD, 1);
               const usdBal = bal * fxRate;
 
@@ -152,7 +186,7 @@ const AccountsPage = () => {
                         {accountTypeLabel(a.type)}
                       </div>
                     </div>
-                    <AccountBalance a={a} />
+                    <AccountBalance a={a} runningBal={runningBalanceMap.get(a.id)} />
                   </div>
 
                   {/* Row 2: FX rate note when non-USD */}
