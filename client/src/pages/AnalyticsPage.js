@@ -69,14 +69,6 @@ const PieChart = ({ data }) => {
             <svg width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`}>
                 {slices}
             </svg>
-            <ul className="pie-legend">
-                {data.map((d, i) => (
-                    <li key={i}>
-                        <span className="pie-dot" style={{ background: COLORS[i % COLORS.length] }} />
-                        {d.label} ({((d.value / total) * 100).toFixed(1)}%)
-                    </li>
-                ))}
-            </ul>
         </div>
     );
 };
@@ -85,9 +77,8 @@ const PieChart = ({ data }) => {
 const BreakdownTable = ({ data, label }) => {
     const total = data.reduce((s, d) => s + d.value, 0);
     return (
-        <>
-            {/* Desktop table */}
-            <table className="analytics-table analytics-table-desktop">
+        <div className="tx-table-wrap tx-table-wrap-mobile-visible" style={{ marginTop: '16px' }}>
+            <table className="analytics-table">
                 <thead>
                     <tr>
                         <th>#</th>
@@ -115,27 +106,7 @@ const BreakdownTable = ({ data, label }) => {
                     )}
                 </tbody>
             </table>
-
-            {/* Mobile cards */}
-            <div className="analytics-cards">
-                {data.length === 0 ? (
-                    <p className="analytics-empty">No data for the selected period</p>
-                ) : (
-                    data.map((d, i) => (
-                        <div key={i} className="analytics-card">
-                            <div className="analytics-card__rank">#{i + 1}</div>
-                            <div className="analytics-card__body">
-                                <div className="analytics-card__label">{d.label || '(unknown)'}</div>
-                                <div className="analytics-card__amount">${d.value.toFixed(2)}</div>
-                            </div>
-                            <div className="analytics-card__share">
-                                {total > 0 ? ((d.value / total) * 100).toFixed(1) : 0}%
-                            </div>
-                        </div>
-                    ))
-                )}
-            </div>
-        </>
+        </div>
     );
 };
 
