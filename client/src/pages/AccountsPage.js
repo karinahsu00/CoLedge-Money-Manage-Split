@@ -127,22 +127,23 @@ const AccountsPage = () => {
   /** * 輔助組件：渲染帳戶金額 (包含 USD 換算)
    */
   const AccountBalance = ({ a }) => {
-    const bal = Number(a.balance || 0).toFixed(2);
-    const usdEquiv = a.currency !== 'USD' && a.fxRateToUSD 
-      ? (Number(a.balance) * Number(a.fxRateToUSD)).toFixed(2) 
-      : null;
+  const bal = Number(a.balance || 0);
+  const rate = Number(a.fxRateToUSD || 1);
+  const usdEquiv = (a.currency === 'USD' ? bal : bal * rate).toFixed(2);
 
-    return (
-      <div style={{ textAlign: 'right' }}>
-        <div style={{ fontWeight: 700, fontSize: '1.1em' }}>{bal} {a.currency}</div>
-        {usdEquiv && (
-          <div style={{ fontSize: '0.85em', color: '#888', marginTop: '2px' }}>
-            ≈ {usdEquiv} USD
-          </div>
-        )}
-      </div>
-    );
-  };
+  return (
+    <div style={{ textAlign: 'right' }}>
+      {/* 這裡是美金大字 */}
+      <div style={{ fontWeight: 700, fontSize: '1.1em', color: '#2C4C3B' }}>{usdEquiv} USD</div>
+      {/* 這裡是原幣小字 */}
+      {a.currency !== 'USD' && (
+        <div style={{ fontSize: '0.85em', color: '#888', marginTop: '2px' }}>
+          {bal.toFixed(2)} {a.currency}
+        </div>
+      )}
+    </div>
+  );
+};
 
   return (
     <div className="dashboard-container accounts-page">

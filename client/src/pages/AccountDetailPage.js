@@ -39,11 +39,11 @@ function AmountCell({ t, accountId, accountCurrency, isMobile = false }) {
   else if (localCurrency === 'USD') usdAmount = localAmount;
 
   return (
-    <div style={{ fontWeight: 600, textAlign: isMobile ? 'left' : 'inherit' }}>
-      <span>{fmt(localAmount)} {localCurrency}</span>
-      {usdAmount != null && localCurrency !== 'USD' && (
+    <div style={{ fontWeight: 600 }}>
+      <span>{fmt(usdAmount)} USD</span>
+      {localCurrency !== 'USD' && (
         <span style={{ color: '#888', marginLeft: '5px', fontSize: '0.85em', fontWeight: 400 }}>
-          / {fmt(usdAmount)} USD
+          ({fmt(localAmount)} {localCurrency})
         </span>
       )}
     </div>
