@@ -6,21 +6,17 @@ import { accountTypeLabel } from '../constants/accountTypes';
 import './Dashboard.css';
 import MobileTabBar from '../components/MobileTabBar';
 
-const ym = (dateStr) => {
-  if (!dateStr || typeof dateStr !== 'string') return 'Unknown';
-  return dateStr.slice(0, 7);
-};
-
+const ym = (dateStr) => (dateStr && typeof dateStr === 'string' ? dateStr.slice(0, 7) : 'Unknown');
 const toTime = (iso) => {
   const t = new Date(iso).getTime();
   return Number.isNaN(t) ? 0 : t;
 };
-
 const fmt = (n) => Number(n || 0).toFixed(2);
 
-/** * 優化後的金額顯示組件：呈現 LOCAL / USD 格式
+/**
+ * 金額顯示組件：強制執行 LOCAL / USD 格式
  */
-function AmountCell({ t, accountId, accountCurrency }) {
+function AmountCell({ t, accountId, accountCurrency, isMobile = false }) {
   let localAmount = 0;
   let localCurrency = accountCurrency || 'USD';
   let usdAmount = null;
@@ -38,19 +34,15 @@ function AmountCell({ t, accountId, accountCurrency }) {
     localCurrency = t.currency || accountCurrency || 'USD';
   }
 
-  if (t.usdAmount != null) {
-    usdAmount = Number(t.usdAmount);
-  } else if (t.fxRateToUSD != null && localCurrency !== 'USD') {
-    usdAmount = localAmount * Number(t.fxRateToUSD);
-  } else if (localCurrency === 'USD') {
-    usdAmount = localAmount;
-  }
+  if (t.usdAmount != null) usdAmount = Number(t.usdAmount);
+  else if (t.fxRateToUSD != null && localCurrency !== 'USD') usdAmount = localAmount * Number(t.fxRateToUSD);
+  else if (localCurrency === 'USD') usdAmount = localAmount;
 
   return (
-    <div className="tx-amount-cell" style={{ whiteSpace: 'nowrap', fontWeight: 500 }}>
+    <div style={{ fontWeight: 600, textAlign: isMobile ? 'left' : 'inherit' }}>
       <span>{fmt(localAmount)} {localCurrency}</span>
       {usdAmount != null && localCurrency !== 'USD' && (
-        <span style={{ color: '#888', marginLeft: '5px', fontSize: '0.9em' }}>
+        <span style={{ color: '#888', marginLeft: '5px', fontSize: '0.85em', fontWeight: 400 }}>
           / {fmt(usdAmount)} USD
         </span>
       )}
@@ -71,7 +63,6 @@ const AccountDetailPage = () => {
 
   const loadData = async () => {
     try {
-      setError('');
       setLoading(true);
       const [acc, accList, tx] = await Promise.all([
         accountsAPI.getById(id),
@@ -104,19 +95,6 @@ const AccountDetailPage = () => {
 
   const currency = account?.currency || 'USD';
 
-  const summary = useMemo(() => {
-    let income = 0, expense = 0, transferIn = 0, transferOut = 0;
-    relatedTransactions.forEach((t) => {
-      if (t.type === 'income' && t.accountId === id) income += Number(t.amount || 0);
-      if (t.type === 'expense' && t.accountId === id) expense += Number(t.amount || 0);
-      if (t.type === 'transfer') {
-        if (t.accountId === id) transferOut += Number(t.fromAmount ?? t.amount ?? 0);
-        if (t.accountToId === id) transferIn += Number(t.toAmount ?? t.amount ?? 0);
-      }
-    });
-    return { income, expense, transferIn, transferOut };
-  }, [relatedTransactions, id]);
-
   const monthly = useMemo(() => {
     const initial = Number(account?.initialBalance ?? 0);
     let running = initial;
@@ -141,7 +119,8 @@ const AccountDetailPage = () => {
     return [...relatedTransactions].sort((a, b) => toTime(b.date) - toTime(a.date));
   }, [relatedTransactions]);
 
-  const handleLogout = async () => { await logout(); navigate('/login'); };
+  const title = account ? `${account.name}` : 'Account';
+  const balance = Number(account?.balance || 0);
 
   return (
     <div className="dashboard-container account-detail-page">
@@ -153,95 +132,115 @@ const AccountDetailPage = () => {
           <button className="nav-btn" onClick={() => navigate('/split')}>Split</button>
           <button className="nav-btn" onClick={() => navigate('/analytics')}>Analytics</button>
           <button className="nav-btn active" onClick={() => navigate('/account')}>Accounts</button>
-          <button className="logout-btn" onClick={handleLogout}>Logout</button>
+          <button className="logout-btn" onClick={() => { logout(); navigate('/login'); }}>Logout</button>
         </div>
       </nav>
 
       <div className="dashboard-content">
         <div className="dashboard-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h1 style={{ margin: 0 }}>📒 {account?.name || 'Account'}</h1>
-          <button className="add-btn" style={{ fontSize: 14 }} onClick={() => navigate('/account')}>← Back</button>
+          <h1 style={{ margin: 0 }}>📒 {title}</h1>
+          <button className="add-btn" style={{ fontSize: 13, padding: '6px 12px' }} onClick={() => navigate('/account')}>← Back</button>
         </div>
 
         {loading ? <h2>Loading...</h2> : (
           <React.Fragment>
-            {/* KPI Grid */}
+            {/* KPI Overview */}
             <div className="transaction-form-section">
-              <div className="account-overview-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '10px' }}>
-                <div className="account-kpi">
-                    <div className="account-kpi-label">Balance</div>
-                    <div className="account-kpi-value" style={{color: Number(account.balance) < 0 ? '#ff6b6b' : '#2C4C3B'}}>
-                        {fmt(account.balance)} {currency}
-                    </div>
+              <div className="account-overview-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px' }}>
+                <div className="account-kpi" style={{ borderLeft: '4px solid #2C4C3B' }}>
+                  <div className="account-kpi-label">Current Balance</div>
+                  <div className="account-kpi-value" style={{ color: balance < 0 ? '#ff6b6b' : '#2C4C3B' }}>
+                    {fmt(balance)} {currency}
+                  </div>
                 </div>
                 <div className="account-kpi">
-                    <div className="account-kpi-label">Type</div>
-                    <div className="account-kpi-value">{accountTypeLabel(account.type)}</div>
-                </div>
-                <div className="account-kpi kpi-income">
-                    <div className="account-kpi-label">Total In</div>
-                    <div className="account-kpi-value">{fmt(summary.income + summary.transferIn)}</div>
-                </div>
-                <div className="account-kpi kpi-expense">
-                    <div className="account-kpi-label">Total Out</div>
-                    <div className="account-kpi-value">{fmt(summary.expense + summary.transferOut)}</div>
+                  <div className="account-kpi-label">Type</div>
+                  <div className="account-kpi-value" style={{ fontSize: '1.1rem' }}>{accountTypeLabel(account.type)}</div>
                 </div>
               </div>
             </div>
 
-            {/* Monthly Summary (Responsive Table) */}
+            {/* Monthly Summary */}
             <div className="transaction-list">
               <h2>Monthly Summary</h2>
-              <div className="tx-table-wrap tx-table-wrap-mobile-visible">
+              {/* Desktop Table */}
+              <div className="tx-table-wrap accounts-table-wrap">
                 <table className="tx-table">
                   <thead>
-                    <tr>
-                      <th>Month</th>
-                      <th>Income</th><th>Expense</th><th>T-In</th><th>T-Out</th><th>Balance</th>
-                    </tr>
+                    <tr><th>Month</th><th>Income</th><th>Expense</th><th>T-In</th><th>T-Out</th><th>Balance</th></tr>
                   </thead>
                   <tbody>
-                    {monthly.map((m) => (
+                    {monthly.map(m => (
                       <tr key={m.ym}>
                         <td>{m.ym}</td>
                         <td className="tx-amount">{fmt(m.income)}</td>
                         <td className="tx-amount kpi-negative">{fmt(m.expense)}</td>
                         <td className="tx-amount">{fmt(m.transferIn)}</td>
                         <td className="tx-amount kpi-negative">{fmt(m.transferOut)}</td>
-                        <td className="tx-amount" style={{fontWeight: 700}}>{fmt(m.monthEndBalance)}</td>
+                        <td className="tx-amount" style={{ fontWeight: 700 }}>{fmt(m.monthEndBalance)}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
+
+              {/* Mobile Cards (One-page view) */}
+              <div className="accounts-cards">
+                {monthly.map(m => (
+                  <div key={m.ym} className="account-card-mobile" style={{ background: '#fff', padding: '15px', borderRadius: '10px', marginBottom: '10px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', border: '1px solid #eee' }}>
+                    <div style={{ fontWeight: 700, borderBottom: '1px solid #eee', marginBottom: '10px', paddingBottom: '5px', color: '#2C4C3B' }}>{m.ym} Summary</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', fontSize: '13px' }}>
+                      <div><span style={{ color: '#888' }}>In:</span> <span style={{ color: '#2C4C3B' }}>+{fmt(m.income + m.transferIn)}</span></div>
+                      <div><span style={{ color: '#888' }}>Out:</span> <span style={{ color: '#ff6b6b' }}>-{fmt(m.expense + m.transferOut)}</span></div>
+                      <div style={{ gridColumn: 'span 2', paddingTop: '5px', borderTop: '1px dashed #eee', marginTop: '5px', fontWeight: 700 }}>
+                        End Balance: {fmt(m.monthEndBalance)} {currency}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
 
-            {/* Transactions (Responsive Table) */}
+            {/* Transactions Section */}
             <div className="transaction-list">
               <h2>Transactions</h2>
-              <div className="tx-table-wrap tx-table-wrap-mobile-visible">
+              {/* Desktop Table */}
+              <div className="tx-table-wrap accounts-table-wrap">
                 <table className="tx-table">
                   <thead>
-                    <tr>
-                      <th>Date</th><th>Type</th><th>Dir</th><th>Other Account</th><th>Amount (Local / USD)</th>
-                    </tr>
+                    <tr><th>Date</th><th>Type</th><th>Dir</th><th>Account</th><th>Amount (Local / USD)</th></tr>
                   </thead>
                   <tbody>
-                    {relatedTransactionsDesc.map((t) => (
+                    {relatedTransactionsDesc.map(t => (
                       <tr key={t.id}>
-                        <td className="tx-nowrap">{t.date}</td>
-                        <td className="tx-nowrap">{t.type}</td>
-                        <td>
-                          <span className={t.accountId === id && (t.type === 'expense' || t.type === 'transfer') ? 'tx-dir-out' : 'tx-dir-in'}>
-                            {t.accountId === id && (t.type === 'expense' || t.type === 'transfer') ? 'Out' : 'In'}
-                          </span>
-                        </td>
+                        <td>{t.date}</td><td>{t.type}</td>
+                        <td><span className={t.accountId === id && (t.type === 'expense' || t.type === 'transfer') ? 'tx-dir-out' : 'tx-dir-in'}>{t.accountId === id && (t.type === 'expense' || t.type === 'transfer') ? 'Out' : 'In'}</span></td>
                         <td>{t.type === 'transfer' ? (t.accountId === id ? accountNameById.get(t.accountToId) : accountNameById.get(t.accountId)) : '-'}</td>
                         <td><AmountCell t={t} accountId={id} accountCurrency={currency} /></td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
+              </div>
+
+              {/* Mobile Transactions (One-page view) */}
+              <div className="accounts-cards">
+                {relatedTransactionsDesc.map(t => (
+                  <div key={t.id} className="account-card-mobile" style={{ background: '#fff', padding: '12px', borderRadius: '8px', marginBottom: '10px', borderLeft: `5px solid ${t.accountId === id && (t.type === 'expense' || t.type === 'transfer') ? '#ff6b6b' : '#2C4C3B'}` }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
+                      <span style={{ fontSize: '12px', color: '#888' }}>{t.date} • {t.type}</span>
+                      <span style={{ fontSize: '11px', fontWeight: 700, padding: '2px 6px', borderRadius: '4px', background: '#f0f0f0' }}>
+                        {t.accountId === id && (t.type === 'expense' || t.type === 'transfer') ? 'OUT' : 'IN'}
+                      </span>
+                    </div>
+                    <AmountCell t={t} accountId={id} accountCurrency={currency} isMobile={true} />
+                    {t.type === 'transfer' && (
+                      <div style={{ fontSize: '11px', color: '#666', marginTop: '5px' }}>
+                        {t.accountId === id ? `To: ${accountNameById.get(t.accountToId)}` : `From: ${accountNameById.get(t.accountId)}`}
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
             </div>
           </React.Fragment>
