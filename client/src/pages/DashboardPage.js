@@ -16,23 +16,27 @@ const safeNum = (v, fallback = 0) => {
   return Number.isFinite(n) ? n : fallback;
 };
 
-/** * 終極金額格式化：針對非 USD 交易，強制顯示 "USD (Local)"
+/** * 修正後的金額顯示組件：強制從帳戶抓取原幣資訊
  */
 const AmountDisplay = ({ t, accountById }) => {
   const amount = safeNum(t.amount, 0);
-  const localCurrency = t.currency || t.fromCurrency || 'USD';
+  const acc = accountById.get(t.accountId);
+  
+  // 優先級：交易紀錄幣別 > 帳戶原幣 > 預設 USD
+  const localCurrency = t.currency || t.fromCurrency || acc?.currency || 'USD';
   
   // 取得 USD 等值
   let usdAmt = null;
   if (t.usdAmount != null) usdAmt = safeNum(t.usdAmount);
   else if (t.fxRateToUSD != null) usdAmt = amount * safeNum(t.fxRateToUSD);
+  else if (acc?.fxRateToUSD != null && localCurrency !== 'USD') usdAmt = amount * safeNum(acc.fxRateToUSD);
   else if (localCurrency === 'USD') usdAmt = amount;
 
-  // 如果是轉帳，顯示 A -> B 的邏輯
+  // 轉帳邏輯
   if (t.type === 'transfer') {
     return (
       <div style={{ textAlign: 'right', fontSize: '13px' }}>
-        <div style={{ fontWeight: 600, color: 'var(--color-primary)' }}>
+        <div style={{ fontWeight: 600, color: '#2C4C3B' }}>
           {safeNum(t.fromAmount || t.amount).toFixed(2)} {t.fromCurrency || 'USD'}
         </div>
         <div style={{ color: '#888' }}>
@@ -42,11 +46,15 @@ const AmountDisplay = ({ t, accountById }) => {
     );
   }
 
-  // 一般收支：如果是外幣，顯示 USD ( Local )
-  if (localCurrency !== 'USD' && usdAmt !== null) {
+  // 強制顯示：只要原幣不是 USD，就必須顯示 ( 原幣金額 )
+  if (localCurrency !== 'USD') {
+    // 這裡我們預設存入的 amount 就是原幣金額
+    // 如果資料庫顯示 usdAmt，我們就反推或直接顯示
+    const displayUSD = usdAmt !== null ? usdAmt.toFixed(2) : (amount * (acc?.fxRateToUSD || 1)).toFixed(2);
+    
     return (
       <div style={{ textAlign: 'right' }}>
-        <span style={{ fontWeight: 600 }}>{usdAmt.toFixed(2)} USD</span>
+        <span style={{ fontWeight: 600 }}>{displayUSD} USD</span>
         <span style={{ color: '#888', fontSize: '0.85em', display: 'block' }}>
           ( {amount.toFixed(2)} {localCurrency} )
         </span>
@@ -54,12 +62,7 @@ const AmountDisplay = ({ t, accountById }) => {
     );
   }
 
-  // 純美金交易
-  return (
-    <div style={{ textAlign: 'right', fontWeight: 600 }}>
-      {amount.toFixed(2)} USD
-    </div>
-  );
+  return <div style={{ textAlign: 'right', fontWeight: 600 }}>{amount.toFixed(2)} USD</div>;
 };
 
 const DashboardPage = () => {
@@ -90,13 +93,6 @@ const DashboardPage = () => {
     fxRate: '', fromCurrency: '', toCurrency: '', fxAuto: true,
   });
 
-  const [editingId, setEditingId] = useState(null);
-  const [editForm, setEditForm] = useState(EMPTY_EDIT);
-  const [editError, setEditError] = useState('');
-  const [savingEdit, setSavingEdit] = useState(false);
-
-  const didLoadRef = useRef(false);
-
   const accountById = useMemo(() => {
     const m = new Map();
     (accounts || []).forEach((a) => { if (a?.id) m.set(a.id, a); });
@@ -110,52 +106,52 @@ const DashboardPage = () => {
   }, [accounts]);
 
   const reloadAll = async () => {
-    const [acct, tx] = await Promise.all([accountsAPI.getAll(), transactionsAPI.getAll()]);
-    setAccounts(Array.isArray(acct) ? acct : []);
-    setTransactions(Array.isArray(tx) ? tx : []);
-    return { acct, tx };
+    try {
+      const [acct, tx] = await Promise.all([accountsAPI.getAll(), transactionsAPI.getAll()]);
+      setAccounts(Array.isArray(acct) ? acct : []);
+      setTransactions(Array.isArray(tx) ? tx : []);
+    } catch (e) { console.error(e); }
   };
 
   useEffect(() => {
-    if (didLoadRef.current) return;
-    didLoadRef.current = true;
-    reloadAll().then(({ acct }) => {
-      if (acct?.length) setFormData(p => ({ ...p, accountId: acct[0].id }));
-      setLoading(false);
-    });
+    reloadAll().then(() => setLoading(false));
   }, []);
+
+  // 當選擇帳戶時，自動更新輸入框的幣別提示
+  const selectedAccCurrency = useMemo(() => {
+    return accountById.get(formData.accountId)?.currency || 'USD';
+  }, [formData.accountId, accountById]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleTypeChange = (type) => {
-    setTransactionType(type);
-    setFormData(prev => ({ ...prev, type, category: '' }));
-  };
-
   const handleAddTransaction = async (e) => {
     e.preventDefault();
-    if (!formData.amount || !formData.category || !formData.accountId) return alert('Fill required fields');
+    if (!formData.amount || !formData.category || !formData.accountId) return alert('Please fill in required fields');
+    
     try {
       setSubmitting(true);
       const acc = accountById.get(formData.accountId);
+      
       const payload = {
         ...formData,
         amount: Number(formData.amount),
         currency: acc?.currency || 'USD',
+        fxRateToUSD: acc?.fxRateToUSD || null,
         createdAt: new Date().toISOString()
       };
+      
       await transactionsAPI.create(payload);
       await reloadAll();
       setFormData(p => ({ ...p, amount: '', note: '', category: '' }));
-    } catch (e) { setError('Failed to add'); } finally { setSubmitting(false); }
+    } catch (e) { setError('Failed to add transaction'); } finally { setSubmitting(false); }
   };
 
   const filteredTransactions = useMemo(() => {
-    let list = Array.isArray(transactions) ? transactions : [];
-    list = list.filter((t) => (t.type === transactionType));
+    let list = Array.isArray(transactions) ? [...transactions] : [];
+    list = list.filter((t) => t.type === transactionType);
     return list.sort((a, b) => sortOrder === 'desc' 
       ? new Date(b.date) - new Date(a.date) 
       : new Date(a.date) - new Date(b.date));
@@ -163,7 +159,6 @@ const DashboardPage = () => {
 
   return (
     <div className="dashboard-container record-page">
-      {/* Navbar hidden on Mobile via CSS */}
       <nav className="navbar">
         <div className="navbar-brand">🏦 CoLedge</div>
         <div className="nav-links">
@@ -187,49 +182,48 @@ const DashboardPage = () => {
                 <input type="date" name="date" value={formData.date} onChange={handleInputChange} className="form-input" />
               </div>
               <div className="form-group">
-                <label>Amount</label>
-                <input type="number" step="0.01" name="amount" value={formData.amount} onChange={handleInputChange} className="form-input" />
+                <label>Amount ({selectedAccCurrency})</label>
+                <input type="number" step="0.01" name="amount" value={formData.amount} onChange={handleInputChange} className="form-input" placeholder="0.00" />
               </div>
               <div className="form-group">
                 <label>Account</label>
                 <select name="accountId" value={formData.accountId} onChange={handleInputChange} className="form-input">
+                  <option value="">Select Account</option>
                   {accounts.map(acc => <option key={acc.id} value={acc.id}>{acc.name} ({acc.currency})</option>)}
                 </select>
               </div>
             </div>
-            {/* 這裡可以根據需要縮減其他欄位以保持簡潔 */}
             <div className="form-row">
               <div className="form-group">
                 <label>Category</label>
                 <select name="category" value={formData.category} onChange={handleInputChange} className="form-input">
-                  <option value="">Select</option>
+                  <option value="">Select Category</option>
                   {customCategories[transactionType].map(cat => <option key={cat} value={cat}>{cat}</option>)}
                 </select>
               </div>
               <div className="form-group">
                 <label>Note</label>
-                <input type="text" name="note" value={formData.note} onChange={handleInputChange} className="form-input" />
+                <input type="text" name="note" value={formData.note} onChange={handleInputChange} className="form-input" placeholder="Optional" />
               </div>
             </div>
-            <button type="submit" className="add-btn" disabled={submitting}>Add</button>
+            <button type="submit" className="add-btn" disabled={submitting}>Add Transaction</button>
           </form>
         </div>
 
         <div className="transaction-tabs">
-          <button className={`tab ${transactionType === 'expense' ? 'active' : ''}`} onClick={() => handleTypeChange('expense')}>💸 Expense</button>
-          <button className={`tab ${transactionType === 'income' ? 'active' : ''}`} onClick={() => handleTypeChange('income')}>💰 Income</button>
-          <button className={`tab ${transactionType === 'transfer' ? 'active' : ''}`} onClick={() => handleTypeChange('transfer')}>🔄 Transfer</button>
+          <button className={`tab ${transactionType === 'expense' ? 'active' : ''}`} onClick={() => setTransactionType('expense')}>💸 Expense</button>
+          <button className={`tab ${transactionType === 'income' ? 'active' : ''}`} onClick={() => setTransactionType('income')}>💰 Income</button>
+          <button className={`tab ${transactionType === 'transfer' ? 'active' : ''}`} onClick={() => setTransactionType('transfer')}>🔄 Transfer</button>
         </div>
 
         <div className="transaction-list">
           <div className="tx-header">
-            <h2>Transactions</h2>
+            <h2>Recent Transactions</h2>
             <select value={sortOrder} onChange={(e) => setSortOrder(e.target.value)}>
               <option value="desc">Newest</option><option value="asc">Oldest</option>
             </select>
           </div>
 
-          {/* 電腦版表格 */}
           <div className="tx-table-wrap">
             <table className="tx-table">
               <thead>
@@ -248,7 +242,6 @@ const DashboardPage = () => {
             </table>
           </div>
 
-          {/* 手機版卡片 */}
           <div className="tx-cards">
             {filteredTransactions.map(t => (
               <div key={t.id} className="tx-card" style={{ padding: '15px', borderBottom: '1px solid #eee' }}>
@@ -257,7 +250,7 @@ const DashboardPage = () => {
                   <AmountDisplay t={t} accountById={accountById} />
                 </div>
                 <div style={{ fontSize: '12px', color: '#888' }}>
-                  {t.date} • {accountNameById.get(t.accountId)} {t.note && `• ${t.note}`}
+                  {t.date} • {accountNameById.get(t.accountId)}
                 </div>
               </div>
             ))}

@@ -120,7 +120,12 @@ const AccountDetailPage = () => {
   }, [relatedTransactions]);
 
   const title = account ? `${account.name}` : 'Account';
-  const balance = Number(account?.balance || 0);
+
+  // 亮點：如果月度總結有算出來，就用最新的 End Balance，否則才用帳戶原始餘額
+  const displayBalance = useMemo(() => {
+      if (monthly.length > 0) return monthly[0].monthEndBalance;
+      return Number(account?.balance || 0);
+  }, [monthly, account]);
 
   return (
     <div className="dashboard-container account-detail-page">
@@ -149,8 +154,8 @@ const AccountDetailPage = () => {
               <div className="account-overview-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px' }}>
                 <div className="account-kpi" style={{ borderLeft: '4px solid #2C4C3B' }}>
                   <div className="account-kpi-label">Current Balance</div>
-                  <div className="account-kpi-value" style={{ color: balance < 0 ? '#ff6b6b' : '#2C4C3B' }}>
-                    {fmt(balance)} {currency}
+                  <div className="account-kpi-value" style={{ color: displayBalance < 0 ? '#ff6b6b' : '#2C4C3B' }}>
+                    {fmt(displayBalance)} {currency}
                   </div>
                 </div>
                 <div className="account-kpi">
