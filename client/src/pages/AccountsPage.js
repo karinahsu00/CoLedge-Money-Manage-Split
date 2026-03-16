@@ -55,14 +55,17 @@ const AccountsPage = () => {
       const aa = Boolean(a?.archived);
       const bb = Boolean(b?.archived);
       if (aa !== bb) return aa ? 1 : -1;
-      const an = (a?.name || '').toLowerCase();
-      const bn = (b?.name || '').toLowerCase();
-      return an.localeCompare(bn);
+      return (a?.name || '').toLowerCase().localeCompare((b?.name || '').toLowerCase());
     });
   }, [accounts]);
 
-  const totalBalance = useMemo(() => {
-    return (accounts || []).reduce((sum, a) => sum + Number(a?.balance || 0), 0);
+  // 計算所有帳戶折合 USD 的總額 (假設 API 有提供 fxRateToUSD)
+  const totalBalanceUSD = useMemo(() => {
+    return (accounts || []).reduce((sum, a) => {
+      const bal = Number(a?.balance || 0);
+      const rate = Number(a?.fxRateToUSD || 1);
+      return sum + (a.currency === 'USD' ? bal : bal * rate);
+    }, 0);
   }, [accounts]);
 
   const handleCreateChange = (e) => {
@@ -75,13 +78,10 @@ const AccountsPage = () => {
     if (!formData.name.trim()) return alert('Please enter account name');
     try {
       setSubmitting(true);
-      const startingBalance = Number(formData.balance || 0);
       await accountsAPI.create({
-        name: formData.name.trim(),
-        type: formData.type,
-        balance: startingBalance,
-        initialBalance: startingBalance,
-        currency: formData.currency || 'USD',
+        ...formData,
+        balance: Number(formData.balance || 0),
+        initialBalance: Number(formData.balance || 0),
         archived: false,
       });
       setFormData({ name: '', type: 'cash', balance: 0, currency: 'USD' });
@@ -98,21 +98,12 @@ const AccountsPage = () => {
     setEditForm({ name: acc.name || '', type: acc.type || 'cash', currency: acc.currency || 'USD' });
   };
 
-  const cancelEdit = () => {
-    setEditingId('');
-    setEditForm({ name: '', type: 'cash', currency: 'USD' });
-  };
-
   const saveEdit = async () => {
     if (!editForm.name.trim()) return alert('Name is required');
     try {
       setSubmitting(true);
-      await accountsAPI.update(editingId, {
-        name: editForm.name.trim(),
-        type: editForm.type,
-        currency: editForm.currency || 'USD',
-      });
-      cancelEdit();
+      await accountsAPI.update(editingId, editForm);
+      setEditingId('');
       await loadAccounts();
     } catch (e) {
       setError('Failed to update account');
@@ -124,20 +115,37 @@ const AccountsPage = () => {
   const toggleArchive = async (acc) => {
     try {
       setSubmitting(true);
-      await accountsAPI.update(acc.id, { archived: !Boolean(acc.archived) });
+      await accountsAPI.update(acc.id, { archived: !acc.archived });
       await loadAccounts();
     } catch (e) {
-      setError('Failed to update account');
+      setError('Failed to update status');
     } finally {
       setSubmitting(false);
     }
   };
 
-  const handleLogout = async () => { await logout(); navigate('/login'); };
+  /** * 輔助組件：渲染帳戶金額 (包含 USD 換算)
+   */
+  const AccountBalance = ({ a }) => {
+    const bal = Number(a.balance || 0).toFixed(2);
+    const usdEquiv = a.currency !== 'USD' && a.fxRateToUSD 
+      ? (Number(a.balance) * Number(a.fxRateToUSD)).toFixed(2) 
+      : null;
+
+    return (
+      <div style={{ textAlign: 'right' }}>
+        <div style={{ fontWeight: 700, fontSize: '1.1em' }}>{bal} {a.currency}</div>
+        {usdEquiv && (
+          <div style={{ fontSize: '0.85em', color: '#888', marginTop: '2px' }}>
+            ≈ {usdEquiv} USD
+          </div>
+        )}
+      </div>
+    );
+  };
 
   return (
     <div className="dashboard-container accounts-page">
-      {/* Navbar (Hidden on Mobile via CSS) */}
       <nav className="navbar">
         <div className="navbar-brand">🏦 CoLedge</div>
         <div className="nav-links">
@@ -145,12 +153,14 @@ const AccountsPage = () => {
           <button className="nav-btn" onClick={() => navigate('/split')}>Split</button>
           <button className="nav-btn" onClick={() => navigate('/analytics')}>Analytics</button>
           <button className="nav-btn active">Accounts</button>
-          <button className="logout-btn" onClick={handleLogout}>Logout</button>
+          <button className="logout-btn" onClick={() => { logout(); navigate('/login'); }}>Logout</button>
         </div>
       </nav>
 
       <div className="dashboard-content">
-        <div className="dashboard-header"><h1>🏷️ Accounts</h1></div>
+        <div className="dashboard-header">
+          <h1>🏷️ Accounts</h1>
+        </div>
 
         {error && <div className="error-message">{error}</div>}
 
@@ -159,96 +169,84 @@ const AccountsPage = () => {
           <h2>Add Account</h2>
           <form onSubmit={handleCreate} className="transaction-form">
             <div className="form-row">
-              <div className="form-group">
-                <label>Name</label>
-                <input className="form-input" name="name" value={formData.name} onChange={handleCreateChange} placeholder="e.g. Chase" />
-              </div>
-              <div className="form-group">
-                <label>Type</label>
-                <select className="form-input" name="type" value={formData.type} onChange={handleCreateChange}>
-                  {ACCOUNT_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
-                </select>
-              </div>
-              <div className="form-group">
-                <label>Initial Balance</label>
-                <input className="form-input" name="balance" type="number" step="0.01" value={formData.balance} onChange={handleCreateChange} />
-              </div>
-              <div className="form-group">
-                <label>Currency</label>
-                <input className="form-input" name="currency" value={formData.currency} onChange={handleCreateChange} placeholder="USD" />
-              </div>
+              <div className="form-group"><label>Name</label><input className="form-input" name="name" value={formData.name} onChange={handleCreateChange} placeholder="e.g. Chase" /></div>
+              <div className="form-group"><label>Type</label><select className="form-input" name="type" value={formData.type} onChange={handleCreateChange}>{ACCOUNT_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}</select></div>
+              <div className="form-group"><label>Balance</label><input className="form-input" name="balance" type="number" step="0.01" value={formData.balance} onChange={handleCreateChange} /></div>
+              <div className="form-group"><label>Currency</label><input className="form-input" name="currency" value={formData.currency} onChange={handleCreateChange} placeholder="USD" /></div>
             </div>
-            <button type="submit" className="add-btn" disabled={submitting}>{submitting ? 'Saving...' : 'Create Account'}</button>
+            <button type="submit" className="add-btn" disabled={submitting}>Create Account</button>
           </form>
         </div>
 
         <div className="transaction-list">
           <div className="tx-header">
-            <h2 style={{ margin: 0 }}>Your Accounts</h2>
-            <div style={{ fontWeight: 700 }}>Total: {totalBalance.toFixed(2)}</div>
+            <h2>Your Accounts</h2>
+            <div style={{ color: 'var(--color-primary)', fontWeight: 800 }}>Total: {totalBalanceUSD.toFixed(2)} USD</div>
           </div>
 
           {loading ? <p>Loading...</p> : (
-            <React.Fragment>
-              {/* 🖥️ 電腦版表格：套用 accounts-table-wrap */}
+            <>
+              {/* 🖥️ 電腦版表格 */}
               <div className="accounts-table-wrap">
                 <table className="tx-table">
                   <thead>
-                    <tr>
-                      <th>Name</th><th>Type</th><th>Currency</th><th style={{ textAlign: 'right' }}>Balance</th><th>Actions</th>
-                    </tr>
+                    <tr><th>Name</th><th>Type</th><th>Currency</th><th style={{ textAlign: 'right' }}>Balance</th><th>Actions</th></tr>
                   </thead>
                   <tbody>
-                    {sortedAccounts.map((a) => {
-                      const isEditing = editingId === a.id;
-                      return (
-                        <tr key={a.id} className={a.archived ? 'account-archived-row' : ''} onClick={() => navigate(`/account/${a.id}`)} style={{ cursor: 'pointer' }}>
-                          <td>
-                            {isEditing ? (
-                              <input className="form-input" value={editForm.name} onChange={(e) => setEditForm((p) => ({ ...p, name: e.target.value }))} onClick={(e) => e.stopPropagation()} />
-                            ) : (
-                              <span>{a.name} {a.archived && <span className="archived-pill">Archived</span>}</span>
-                            )}
-                          </td>
-                          <td>{isEditing ? <select className="form-input" value={editForm.type} onChange={(e) => setEditForm((p) => ({ ...p, type: e.target.value }))} onClick={(e) => e.stopPropagation()}>{ACCOUNT_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}</select> : accountTypeLabel(a.type)}</td>
-                          <td>{isEditing ? <input className="form-input" value={editForm.currency} onChange={(e) => setEditForm((p) => ({ ...p, currency: e.target.value }))} onClick={(e) => e.stopPropagation()} /> : a.currency}</td>
-                          <td className="tx-amount">{Number(a.balance || 0).toFixed(2)}</td>
-                          <td onClick={(e) => e.stopPropagation()}>
-                            {isEditing ? (
-                              <button className="add-btn" onClick={saveEdit}>Save</button>
-                            ) : (
-                              <div style={{display: 'flex', gap: '5px'}}>
-                                <button className="add-btn" onClick={() => startEdit(a)}>Edit</button>
-                                <button className="add-btn" onClick={() => toggleArchive(a)}>{a.archived ? 'Unhide' : 'Hide'}</button>
-                              </div>
-                            )}
-                          </td>
-                        </tr>
-                      );
-                    })}
+                    {sortedAccounts.map((a) => (
+                      <tr key={a.id} className={a.archived ? 'account-archived-row' : ''} onClick={() => navigate(`/account/${a.id}`)} style={{ cursor: 'pointer' }}>
+                        <td>{editingId === a.id ? <input className="form-input" value={editForm.name} onChange={e => setEditForm(p => ({...p, name: e.target.value}))} onClick={e => e.stopPropagation()} /> : <span>{a.name} {a.archived && <span className="archived-pill">Hidden</span>}</span>}</td>
+                        <td>{accountTypeLabel(a.type)}</td>
+                        <td>{a.currency}</td>
+                        <td><AccountBalance a={a} /></td>
+                        <td onClick={e => e.stopPropagation()}>
+                          <div style={{ display: 'flex', gap: '5px' }}>
+                            <button className="edit-btn" onClick={() => startEdit(a)}>Edit</button>
+                            <button className="delete-btn" onClick={() => toggleArchive(a)}>{a.archived ? 'Unhide' : 'Hide'}</button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
               </div>
 
-              {/* 📱 手機版卡片：套用 accounts-cards */}
+              {/* 📱 手機版卡片 - 強化視覺效果 */}
               <div className="accounts-cards">
                 {sortedAccounts.map((a) => (
-                  <div key={a.id} className={`account-card-mobile ${a.archived ? 'is-archived' : ''}`} onClick={() => navigate(`/account/${a.id}`)}>
-                    <div className="account-card-mobile__top">
+                  <div 
+                    key={a.id} 
+                    className={`account-card-mobile ${a.archived ? 'is-archived' : ''}`}
+                    style={{
+                      background: 'white',
+                      borderRadius: '12px',
+                      padding: '16px',
+                      marginBottom: '12px',
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                      border: '1px solid #eee'
+                    }}
+                    onClick={() => navigate(`/account/${a.id}`)}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                       <div>
-                        <div className="account-card-mobile__name">{a.name} {a.archived && <span className="archived-pill">Archived</span>}</div>
-                        <div className="account-card-mobile__meta">{accountTypeLabel(a.type)} · {a.currency}</div>
+                        <div style={{ fontWeight: 700, fontSize: '1.1rem', color: '#2C4C3B' }}>
+                          {a.name}
+                          {a.archived && <span className="archived-pill" style={{ fontSize: '10px', marginLeft: '5px' }}>Hidden</span>}
+                        </div>
+                        <div style={{ fontSize: '12px', color: '#888', marginTop: '4px' }}>
+                          {accountTypeLabel(a.type)} · {a.currency}
+                        </div>
                       </div>
-                      <div className="account-card-mobile__balance">{Number(a.balance || 0).toFixed(2)}</div>
+                      <AccountBalance a={a} />
                     </div>
-                    <div className="account-card-mobile__actions" onClick={(e) => e.stopPropagation()}>
-                        <button className="add-btn" onClick={() => startEdit(a)}>Edit</button>
-                        <button className="add-btn" onClick={() => toggleArchive(a)}>{a.archived ? 'Unhide' : 'Hide'}</button>
+                    <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }} onClick={e => e.stopPropagation()}>
+                      <button className="edit-btn" style={{ flex: 1, padding: '8px' }} onClick={() => startEdit(a)}>Edit</button>
+                      <button className="delete-btn" style={{ flex: 1, padding: '8px' }} onClick={() => toggleArchive(a)}>{a.archived ? 'Show' : 'Hide'}</button>
                     </div>
                   </div>
                 ))}
               </div>
-            </React.Fragment>
+            </>
           )}
         </div>
       </div>
